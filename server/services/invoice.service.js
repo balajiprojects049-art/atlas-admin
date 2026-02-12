@@ -47,6 +47,7 @@ class InvoiceService {
                 cgst,
                 sgst,
                 totalAmount,
+                paidAmount: data.paidAmount || 0,
                 paymentStatus: data.paymentStatus?.toUpperCase() || 'PENDING',
             },
             include: {
@@ -129,7 +130,7 @@ class InvoiceService {
         // Only keep fields that exist in the Prisma schema to avoid errors
         const validFields = [
             'amount', 'gstAmount', 'cgst', 'sgst', 'lateFee', 'totalAmount',
-            'paymentStatus', 'dueDate', 'paidDate', 'razorpayOrderId',
+            'paidAmount', 'paymentStatus', 'dueDate', 'paidDate', 'razorpayOrderId',
             'razorpayPaymentId', 'paymentMethod'
         ];
 
@@ -159,11 +160,15 @@ class InvoiceService {
 
     // Mark invoice as paid
     async markAsPaid(id, paymentDetails) {
+        const invoice = await prisma.invoice.findUnique({ where: { id } });
+        if (!invoice) return null;
+
         return await prisma.invoice.update({
             where: { id },
             data: {
                 paymentStatus: 'PAID',
                 paidDate: new Date(),
+                paidAmount: invoice.totalAmount, // Ensure full amount is recorded
                 ...paymentDetails,
             },
             include: {
@@ -192,15 +197,11 @@ class InvoiceService {
     // Get total revenue
     async getTotalRevenue() {
         const result = await prisma.invoice.aggregate({
-            where: {
-                paymentStatus: 'PAID',
-            },
             _sum: {
-                totalAmount: true,
+                paidAmount: true,
             },
         });
-
-        return result._sum.totalAmount || 0;
+        return result._sum.paidAmount || 0;
     }
 
     // Get today's collections
@@ -213,18 +214,17 @@ class InvoiceService {
 
         const result = await prisma.invoice.aggregate({
             where: {
-                paymentStatus: 'PAID',
-                paidDate: {
+                updatedAt: { // Using updatedAt as paidDate might be null for partial
                     gte: today,
                     lt: tomorrow,
                 },
             },
             _sum: {
-                totalAmount: true,
+                paidAmount: true,
             },
         });
 
-        return result._sum.totalAmount || 0;
+        return result._sum.paidAmount || 0;
     }
 }
 

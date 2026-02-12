@@ -27,7 +27,7 @@ const Dashboard = () => {
             ]);
 
             if (statsResponse.data.success) {
-                setStats(statsResponse.data.data || {});
+                setStats(statsResponse.data.stats || {});
             }
 
             if (invoicesResponse.data.success) {
@@ -60,7 +60,7 @@ const Dashboard = () => {
         },
         {
             header: 'Status',
-            render: (row) => <PaymentStatusBadge status={row.status} />,
+            render: (row) => <PaymentStatusBadge status={row.paymentStatus} />,
         },
     ];
 

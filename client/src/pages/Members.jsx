@@ -73,6 +73,22 @@ const Members = () => {
                 return <MembershipStatusBadge status={status} />;
             },
         },
+        {
+            header: 'Actions',
+            render: (row) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/members/edit/${row.id}`);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm"
+                    >
+                        Edit
+                    </button>
+                </div>
+            ),
+        },
     ];
 
     return (

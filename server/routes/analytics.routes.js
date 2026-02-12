@@ -20,17 +20,17 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
         // Overdue Payments
         const overdueInvoices = await invoiceService.getOverdueInvoices();
 
-        // Recent transactions (last 10 paid invoices)
+        // Recent transactions (paid or partial)
         const recentTransactions = await prisma.invoice.findMany({
             where: {
-                paymentStatus: 'PAID',
+                paymentStatus: { in: ['PAID', 'PARTIAL'] },
             },
             include: {
                 member: true,
                 plan: true,
             },
             orderBy: {
-                paidDate: 'desc',
+                updatedAt: 'desc',
             },
             take: 10,
         });

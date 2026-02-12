@@ -30,12 +30,8 @@ export const authAPI = {
 export const memberAPI = {
     getAll: (params) => api.get('/members', { params }),
     getById: (id) => api.get(`/members/${id}`),
-    create: (data) => api.post('/members', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-    update: (id, data) => api.put(`/members/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    create: (data) => api.post('/members', data),
+    update: (id, data) => api.put(`/members/${id}`, data),
     delete: (id) => api.delete(`/members/${id}`),
 };
 

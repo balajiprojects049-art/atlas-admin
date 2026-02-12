@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/layout/DashboardLayout';
 import { Table, Pagination } from '../components/ui/Table';
 import Button from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -79,55 +78,53 @@ const Members = () => {
     ];
 
     return (
-        <DashboardLayout>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
-                            Members
-                        </h1>
-                        <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">
-                            Manage gym members and their memberships
-                        </p>
-                    </div>
-                    <Button onClick={() => navigate('/members/add')}>
-                        Add Member
-                    </Button>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
+                        Members
+                    </h1>
+                    <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">
+                        Manage gym members and their memberships
+                    </p>
                 </div>
+                <Button onClick={() => navigate('/members/add')}>
+                    Add Member
+                </Button>
+            </div>
 
-                {/* Search & Filters */}
-                <div className="card">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <Input
-                            placeholder="Search by name, email, or phone..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="flex-1"
-                        />
-                    </div>
-                </div>
-
-                {/* Members Table */}
-                <div className="card">
-                    <Table
-                        columns={memberColumns}
-                        data={members}
-                        loading={loading}
-                        onRowClick={(member) => navigate(`/members/${member.id}`)}
-                        emptyMessage="No members found"
+            {/* Search & Filters */}
+            <div className="card">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <Input
+                        placeholder="Search by name, email, or phone..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="flex-1"
                     />
-
-                    {totalPages > 1 && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                        />
-                    )}
                 </div>
             </div>
-        </DashboardLayout>
+
+            {/* Members Table */}
+            <div className="card">
+                <Table
+                    columns={memberColumns}
+                    data={members}
+                    loading={loading}
+                    onRowClick={(member) => navigate(`/members/${member.id}`)}
+                    emptyMessage="No members found"
+                />
+
+                {totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                )}
+            </div>
+        </div>
     );
 };
 

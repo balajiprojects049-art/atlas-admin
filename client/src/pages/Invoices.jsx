@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/layout/DashboardLayout';
 import { Table, Pagination } from '../components/ui/Table';
 import Button from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
@@ -96,65 +95,63 @@ const Invoices = () => {
     ];
 
     return (
-        <DashboardLayout>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
-                            Billing & Invoices
-                        </h1>
-                        <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">
-                            Manage invoices and payment processing
-                        </p>
-                    </div>
-                    <Button onClick={() => navigate('/invoices/create')}>
-                        Create Invoice
-                    </Button>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
+                        Billing & Invoices
+                    </h1>
+                    <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">
+                        Manage invoices and payment processing
+                    </p>
                 </div>
+                <Button onClick={() => navigate('/invoices/create')}>
+                    Create Invoice
+                </Button>
+            </div>
 
-                {/* Search & Filters */}
-                <div className="card">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <Input
-                            placeholder="Search by invoice #, member name..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="flex-1"
-                        />
-                        <Select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            options={[
-                                { value: 'paid', label: 'Paid' },
-                                { value: 'pending', label: 'Pending' },
-                                { value: 'overdue', label: 'Overdue' },
-                            ]}
-                            placeholder="All Status"
-                            className="w-full md:w-48"
-                        />
-                    </div>
-                </div>
-
-                {/* Invoices Table */}
-                <div className="card">
-                    <Table
-                        columns={invoiceColumns}
-                        data={invoices}
-                        loading={loading}
-                        emptyMessage="No invoices found"
+            {/* Search & Filters */}
+            <div className="card">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <Input
+                        placeholder="Search by invoice #, member name..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="flex-1"
                     />
-
-                    {totalPages > 1 && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                        />
-                    )}
+                    <Select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        options={[
+                            { value: 'paid', label: 'Paid' },
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'overdue', label: 'Overdue' },
+                        ]}
+                        placeholder="All Status"
+                        className="w-full md:w-48"
+                    />
                 </div>
             </div>
-        </DashboardLayout>
+
+            {/* Invoices Table */}
+            <div className="card">
+                <Table
+                    columns={invoiceColumns}
+                    data={invoices}
+                    loading={loading}
+                    emptyMessage="No invoices found"
+                />
+
+                {totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                )}
+            </div>
+        </div>
     );
 };
 

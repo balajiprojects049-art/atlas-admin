@@ -69,7 +69,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           border-r border-light-bg-accent dark:border-dark-bg-accent
           flex flex-col
           transition-transform duration-300
-          lg:translate-x-0
+          lg:!translate-x-0
         `}
             >
                 {/* Logo/Brand */}

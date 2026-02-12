@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import DashboardLayout from './components/layout/DashboardLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
+import AddMember from './pages/AddMember';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -31,7 +33,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
         return <Navigate to="/dashboard" replace />;
     }
 
-    return children;
+    return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 function AppRoutes() {
@@ -56,6 +58,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <Members />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/members/add"
+                element={
+                    <ProtectedRoute>
+                        <AddMember />
                     </ProtectedRoute>
                 }
             />

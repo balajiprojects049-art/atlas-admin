@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { authAPI } from '../services/api';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -19,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     // Configure axios defaults
     useEffect(() => {
         if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             // Fetch user data
             fetchUserData();
         } else {
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUserData = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/auth/me');
+            const response = await authAPI.getCurrentUser();
             setUser(response.data.user);
         } catch (error) {
             console.error('Failed to fetch user data:', error);
@@ -41,17 +42,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
-                email,
-                password
-            });
+            const response = await authAPI.login({ email, password });
 
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);
             setToken(token);
             setUser(user);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
             return { success: true };
         } catch (error) {
@@ -66,7 +64,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        delete axios.defaults.headers.common['Authorization'];
+        delete api.defaults.headers.common['Authorization'];
     };
 
     const value = {

@@ -74,7 +74,8 @@ const EditMember = () => {
                 });
 
                 if (member.photo) {
-                    setPhotoPreview(`http://localhost:5000${member.photo}`);
+                    // Use relative path for production compatibility
+                    setPhotoPreview(member.photo);
                 }
             } else {
                 toast.error('Member not found');

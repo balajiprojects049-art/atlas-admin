@@ -89,7 +89,7 @@ const MemberDetails = () => {
                     <div className="h-20 w-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg">
                         {member.photo ? (
                             <img
-                                src={`http://localhost:5000${member.photo}`}
+                                src={member.photo}
                                 alt={member.name}
                                 className="h-full w-full object-cover"
                             />

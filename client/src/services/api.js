@@ -1,105 +1,131 @@
-// Build timestamp: 2026-02-12T20:47:55 - Force rebuild
 import axios from 'axios';
 
-// Production-safe API URL configuration
-// In production (Vercel), always use /api
-// In development, use environment variable or localhost
-const API_URL = import.meta.env.PROD
-    ? '/api'
-    : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+// ============================================
+// PRODUCTION-SAFE API CONFIGURATION
+// ============================================
 
-console.log('🔧 API Configuration:', {
-    mode: import.meta.env.MODE,
-    isProd: import.meta.env.PROD,
-    apiUrl: API_URL
-});
+/**
+ * API Base URL Configuration
+ * - Production (Vercel): Uses /api (relative path)
+ * - Development (Local): Uses http://localhost:5000/api
+ * 
+ * This ensures NO localhost URLs in production builds
+ */
+const getApiUrl = () => {
+    // Check if running in production mode (Vite sets this during build)
+    if (import.meta.env.PROD) {
+        return '/api';
+    }
 
-// Create axios instance
+    // Development mode: use environment variable or default to localhost
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+};
+
+const API_URL = getApiUrl();
+
+// Debug logging (only in development)
+if (import.meta.env.DEV) {
+    console.log('🔧 API Configuration:', {
+        mode: import.meta.env.MODE,
+        isDev: import.meta.env.DEV,
+        isProd: import.meta.env.PROD,
+        apiUrl: API_URL,
+        envApiUrl: import.meta.env.VITE_API_URL
+    });
+}
+
+// Create axios instance with production-safe configuration
 const api = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
+    timeout: 30000, // 30 second timeout
 });
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+// Request interceptor - Add JWT token to requests
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-});
+);
 
-// Auth APIs
+// Response interceptor - Handle errors globally
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Unauthorized - clear token and redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// ============================================
+// API ENDPOINTS - Production Ready
+// ============================================
+
 export const authAPI = {
-    login: (email, password) => api.post('/auth/login', { email, password }),
+    login: (credentials) => api.post('/auth/login', credentials),
     logout: () => api.post('/auth/logout'),
     getCurrentUser: () => api.get('/auth/me'),
 };
 
-// Member APIs
 export const memberAPI = {
-    getAll: (params) => api.get('/members', { params }),
+    getAll: () => api.get('/members'),
     getById: (id) => api.get(`/members/${id}`),
-    create: (data) => {
-        const config = data instanceof FormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
-            : {};
-        return api.post('/members', data, config);
-    },
-    update: (id, data) => {
-        const config = data instanceof FormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
-            : {};
-        return api.put(`/members/${id}`, data, config);
-    },
+    create: (data) => api.post('/members', data),
+    update: (id, data) => api.put(`/members/${id}`, data),
     delete: (id) => api.delete(`/members/${id}`),
+    uploadPhoto: (id, formData) => api.post(`/members/${id}/photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
-// Invoice APIs
 export const invoiceAPI = {
-    getAll: (params) => api.get('/invoices', { params }),
+    getAll: () => api.get('/invoices'),
     getById: (id) => api.get(`/invoices/${id}`),
     create: (data) => api.post('/invoices', data),
     update: (id, data) => api.put(`/invoices/${id}`, data),
     delete: (id) => api.delete(`/invoices/${id}`),
-    downloadPDF: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
+    download: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
 };
 
-// Payment APIs
 export const paymentAPI = {
-    createOrder: (invoiceId) => api.post('/payments/create', { invoiceId }),
+    createOrder: (data) => api.post('/payments/create', data),
     verifyPayment: (data) => api.post('/payments/verify', data),
     getHistory: (memberId) => api.get(`/payments/history/${memberId}`),
+    recordCashPayment: (data) => api.post('/payments/cash', data),
 };
 
-// Analytics APIs
 export const analyticsAPI = {
     getDashboard: () => api.get('/analytics/dashboard'),
     getRevenue: (params) => api.get('/analytics/revenue', { params }),
-    getMembers: (params) => api.get('/analytics/members', { params }),
-    exportCSV: () => api.get('/analytics/export/csv', { responseType: 'blob' }),
-    exportPDF: () => api.get('/analytics/export/pdf', { responseType: 'blob' }),
+    getMemberStats: () => api.get('/analytics/members'),
 };
 
-// Settings APIs
 export const settingsAPI = {
     get: () => api.get('/settings'),
     update: (data) => api.put('/settings', data),
-    uploadLogo: (file) => {
-        const formData = new FormData();
-        formData.append('logo', file);
-        return api.post('/settings/logo', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-    },
 };
 
-// Plan APIs
 export const planAPI = {
-    getAll: (params) => api.get('/plans', { params }),
+    getAll: () => api.get('/plans'),
     getById: (id) => api.get(`/plans/${id}`),
+    create: (data) => api.post('/plans', data),
+    update: (id, data) => api.put(`/plans/${id}`, data),
+    delete: (id) => api.delete(`/plans/${id}`),
 };
 
+// Export the configured axios instance
 export default api;

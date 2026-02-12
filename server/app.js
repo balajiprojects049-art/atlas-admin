@@ -40,6 +40,8 @@ app.use('/api/payments', require('./routes/payment.routes'));
 app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/settings', require('./routes/settings.routes'));
 app.use('/api/plans', require('./routes/plan.routes'));
+app.use('/api/test', require('./routes/test.routes')); // Added test route
+
 
 // Health Check
 app.get('/api/health', (req, res) => {

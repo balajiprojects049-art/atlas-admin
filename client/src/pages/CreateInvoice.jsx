@@ -251,7 +251,7 @@ const CreateInvoice = () => {
 
     const handleRazorpayPayment = async (invoice) => {
         try {
-            const { data: orderData } = await paymentAPI.createOrder(invoice.id);
+            const { data: orderData } = await paymentAPI.createOrder({ invoiceId: invoice.id });
             if (!orderData.success) {
                 toast.error('Failed to create payment order');
                 return;

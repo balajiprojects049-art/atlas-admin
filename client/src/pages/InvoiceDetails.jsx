@@ -113,8 +113,8 @@ const InvoiceDetails = () => {
                         </h1>
                         <h2 className="text-lg font-semibold mt-2 text-gray-700 italic">Premium Fitness Management</h2>
                         <div className="text-sm text-gray-500 mt-1">
-                            <p>123 Gym Street, Fitness City</p>
-                            <p>+91 98765 43210 | info@atlasfitness.com</p>
+                            <p>3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
+                            <p>+91 99882 29441, +91 83175 29757 | info@atlasfitness.com</p>
                         </div>
                     </div>
                     <div className="text-right">

@@ -71,6 +71,9 @@ class EmailService {
             doc.fillColor('#dc2626').text(' ELITE'); // Red 'ELITE'
             doc.fillColor('black').fontSize(10).font('Helvetica').text('Premium Fitness Management', { align: 'left' });
             doc.text('GSTIN: 36BNEPV0615C1ZA', { align: 'left' });
+            doc.text('3-4-98/4/204, New Narsina Nagar, Mallapur', { align: 'left' });
+            doc.text('Hyderabad, Telangana 500076', { align: 'left' });
+            doc.text('+91 99882 29441, +91 83175 29757', { align: 'left' });
             doc.moveDown();
 
             // Invoice Title

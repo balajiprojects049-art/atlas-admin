@@ -174,6 +174,11 @@ router.get('/export/pdf', authMiddleware, async (req, res) => {
         doc.pipe(res);
 
         // Title
+        // Title
+        doc.fontSize(16).text('Atlas Fitness Elite', { align: 'center' });
+        doc.fontSize(10).text('3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076', { align: 'center' });
+        doc.text('+91 99882 29441, +91 83175 29757', { align: 'center' });
+        doc.moveDown(0.5);
         doc.fontSize(20).text('Detailed Revenue Report', { align: 'center' });
         doc.fontSize(10).text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'center' });
         doc.moveDown();

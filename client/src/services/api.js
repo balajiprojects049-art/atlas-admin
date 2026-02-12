@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// specific check for localhost to avoid build-time environment variable issues
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_URL = isLocalhost ? 'http://localhost:5000/api' : '/api';
+// Production-safe API URL configuration
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
 const api = axios.create({

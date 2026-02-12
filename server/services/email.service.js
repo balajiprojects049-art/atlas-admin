@@ -50,6 +50,7 @@ class EmailService {
             doc.fontSize(20).font('Helvetica-Bold').text('ATLAS FITNESS', { continued: true });
             doc.fillColor('#dc2626').text(' ELITE'); // Red 'ELITE'
             doc.fillColor('black').fontSize(10).font('Helvetica').text('Premium Fitness Management', { align: 'left' });
+            doc.text('GSTIN: 36BNEPV0615C1ZA', { align: 'left' });
             doc.moveDown();
 
             // Invoice Title

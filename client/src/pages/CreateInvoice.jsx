@@ -412,6 +412,7 @@ const CreateInvoice = () => {
                                 <p className="font-semibold text-lg mt-1">Atlas Fitness Services IT</p>
                                 <p className="text-gray-500">123 Gym Street, Fitness City</p>
                                 <p className="text-gray-500">+91 98765 43210 | info@atlasfitness.com</p>
+                                <p className="text-gray-500 font-medium">GSTIN: 36BNEPV0615C1ZA</p>
                             </div>
                             <div className="text-right">
                                 <h2 className="text-xl font-bold text-gray-700">INVOICE</h2>

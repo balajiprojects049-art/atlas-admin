@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 const AddMember = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [photo, setPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -42,7 +44,15 @@ const AddMember = () => {
     ];
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, files } = e.target;
+
+        if (name === 'photo' && files && files[0]) {
+            const file = files[0];
+            setPhoto(file);
+            setPhotoPreview(URL.createObjectURL(file));
+            return;
+        }
+
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -74,15 +84,20 @@ const AddMember = () => {
         try {
             setLoading(true);
 
-            // Format data for API
-            // Note: In a real app, you might calculate endDate here or let backend do it
-            const payload = {
-                ...formData,
-                planDuration: parseInt(formData.planDuration),
-                planAmount: parseFloat(formData.planAmount)
-            };
+            // Use FormData for file upload
+            const data = new FormData();
+            Object.keys(formData).forEach(key => {
+                data.append(key, formData[key]);
+            });
 
-            await memberAPI.create(payload);
+            if (photo) {
+                data.append('photo', photo);
+            }
+
+            // Ensure numeric fields are correctly appended as numbers if needed, 
+            // but FormData appends everything as strings, backend will parse.
+
+            await memberAPI.create(data);
             toast.success('Member added successfully!');
             navigate('/members');
         } catch (error) {
@@ -113,47 +128,79 @@ const AddMember = () => {
 
             <form onSubmit={handleSubmit}>
                 <Card>
-                    <h2 className="text-xl font-semibold text-light-text-primary dark:text-dark-text-primary mb-6">
-                        Personal Information
-                    </h2>
+                    <div className="flex flex-col md:flex-row gap-8 mb-8">
+                        {/* Profile Photo Upload */}
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="h-40 w-40 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+                                {photoPreview ? (
+                                    <img src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs text-gray-500 mt-2 block">Upload Photo</span>
+                                    </div>
+                                )}
+                            </div>
+                            <input
+                                type="file"
+                                name="photo"
+                                onChange={handleChange}
+                                accept="image/*"
+                                className="hidden"
+                                id="photo-upload"
+                            />
+                            <label
+                                htmlFor="photo-upload"
+                                className="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                            >
+                                {photo ? 'Change Photo' : 'Choose File'}
+                            </label>
+                        </div>
+
+                        {/* Basic Info */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Input
+                                label="Full Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                                placeholder="John Doe"
+                            />
+                            <Input
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="john@example.com"
+                            />
+                            <Input
+                                label="Phone Number"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                                placeholder="9876543210"
+                            />
+                            <Select
+                                label="Gender"
+                                name="gender"
+                                value={formData.gender}
+                                onChange={handleChange}
+                                options={[
+                                    { value: 'Male', label: 'Male' },
+                                    { value: 'Female', label: 'Female' },
+                                    { value: 'Other', label: 'Other' }
+                                ]}
+                                placeholder="Select Gender"
+                            />
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <Input
-                            label="Full Name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            placeholder="John Doe"
-                        />
-                        <Input
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="john@example.com"
-                        />
-                        <Input
-                            label="Phone Number"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            required
-                            placeholder="9876543210"
-                        />
-                        <Select
-                            label="Gender"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
-                            options={[
-                                { value: 'Male', label: 'Male' },
-                                { value: 'Female', label: 'Female' },
-                                { value: 'Other', label: 'Other' }
-                            ]}
-                            placeholder="Select Gender"
-                        />
                         <Input
                             label="Date of Birth"
                             name="dob"
@@ -167,7 +214,7 @@ const AddMember = () => {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                rows={3}
+                                rows={2}
                                 placeholder="Enter full address"
                             />
                         </div>

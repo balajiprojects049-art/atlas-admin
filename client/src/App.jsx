@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import AddMember from './pages/AddMember';
 import EditMember from './pages/EditMember';
+import MemberDetails from './pages/MemberDetails';
 import Invoices from './pages/Invoices';
 import CreateInvoice from './pages/CreateInvoice';
 import EditInvoice from './pages/EditInvoice';
@@ -78,6 +79,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <EditMember />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/members/:id"
+                element={
+                    <ProtectedRoute>
+                        <MemberDetails />
                     </ProtectedRoute>
                 }
             />

@@ -74,7 +74,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
                 {/* Logo/Brand */}
                 <div className="p-6 border-b border-light-bg-accent dark:border-dark-bg-accent">
-                    <h1 className="text-2xl font-bold text-accent">GymBill Pro</h1>
+                    <h1 className="text-2xl font-bold text-accent">Atlas Fitness Elite</h1>
                     <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-1">
                         Billing & Management
                     </p>
@@ -110,7 +110,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 {/* Footer */}
                 <div className="p-4 border-t border-light-bg-accent dark:border-dark-bg-accent">
                     <p className="text-xs text-center text-light-text-muted dark:text-dark-text-muted">
-                        © 2026 GymBill Pro
+                        © 2026 Atlas Fitness Elite
                     </p>
                 </div>
             </motion.aside>

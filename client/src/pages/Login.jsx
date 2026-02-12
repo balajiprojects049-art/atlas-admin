@@ -48,7 +48,7 @@ const Login = () => {
                 <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
                     {/* Logo */}
                     <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold text-red-500 mb-2">GymBill Pro</h1>
+                        <h1 className="text-4xl font-bold text-red-500 mb-2">Atlas Fitness Elite</h1>
                         <p className="text-gray-400">Billing & Management System</p>
                     </div>
 
@@ -96,7 +96,7 @@ const Login = () => {
                 </div>
 
                 <p className="text-center text-gray-500 text-xs mt-6">
-                    © 2026 GymBill Pro. All rights reserved.
+                    © 2026 Atlas Fitness Elite. All rights reserved.
                 </p>
             </motion.div>
         </div>

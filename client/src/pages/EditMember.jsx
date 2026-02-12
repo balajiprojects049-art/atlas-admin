@@ -11,6 +11,8 @@ const EditMember = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [photo, setPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -70,6 +72,10 @@ const EditMember = () => {
                     weight: member.weight || '',
                     workoutType: member.workoutType || ''
                 });
+
+                if (member.photo) {
+                    setPhotoPreview(`http://localhost:5000${member.photo}`);
+                }
             } else {
                 toast.error('Member not found');
                 navigate('/members');
@@ -84,7 +90,15 @@ const EditMember = () => {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, files } = e.target;
+
+        if (name === 'photo' && files && files[0]) {
+            const file = files[0];
+            setPhoto(file);
+            setPhotoPreview(URL.createObjectURL(file));
+            return;
+        }
+
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -113,21 +127,28 @@ const EditMember = () => {
         try {
             setLoading(true);
 
-            // Only send fields that match the Member schema
-            const payload = {
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                gender: formData.gender?.toUpperCase(),
-                dob: formData.dob ? new Date(formData.dob) : null,
-                address: formData.address,
-                status: formData.status?.toUpperCase(),
-                height: formData.height,
-                weight: formData.weight,
-                workoutType: formData.workoutType
-            };
+            const data = new FormData();
 
-            await memberAPI.update(id, payload);
+            // Map consistent fields for Backend
+            data.append('name', formData.name);
+            data.append('email', formData.email);
+            data.append('phone', formData.phone);
+            data.append('gender', formData.gender?.toUpperCase() || '');
+            data.append('address', formData.address || '');
+            data.append('status', formData.status?.toUpperCase() || 'ACTIVE');
+            data.append('height', formData.height || '');
+            data.append('weight', formData.weight || '');
+            data.append('workoutType', formData.workoutType || '');
+
+            if (formData.dob) {
+                data.append('dob', formData.dob);
+            }
+
+            if (photo) {
+                data.append('photo', photo);
+            }
+
+            await memberAPI.update(id, data);
             toast.success('Member updated successfully!');
             navigate('/members');
         } catch (error) {
@@ -164,43 +185,75 @@ const EditMember = () => {
 
             <form onSubmit={handleSubmit}>
                 <Card>
-                    <h2 className="text-xl font-semibold text-light-text-primary dark:text-dark-text-primary mb-6">
-                        Personal Information
-                    </h2>
+                    <div className="flex flex-col md:flex-row gap-8 mb-8">
+                        {/* Profile Photo Upload */}
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="h-40 w-40 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+                                {photoPreview ? (
+                                    <img src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs text-gray-500 mt-2 block">Photo</span>
+                                    </div>
+                                )}
+                            </div>
+                            <input
+                                type="file"
+                                name="photo"
+                                onChange={handleChange}
+                                accept="image/*"
+                                className="hidden"
+                                id="photo-upload"
+                            />
+                            <label
+                                htmlFor="photo-upload"
+                                className="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                            >
+                                Change Photo
+                            </label>
+                        </div>
+
+                        {/* Basic Info */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Input
+                                label="Full Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                            />
+                            <Input
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+                            <Input
+                                label="Phone Number"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                            />
+                            <Select
+                                label="Gender"
+                                name="gender"
+                                value={formData.gender}
+                                onChange={handleChange}
+                                options={[
+                                    { value: 'MALE', label: 'Male' },
+                                    { value: 'FEMALE', label: 'Female' },
+                                    { value: 'OTHER', label: 'Other' }
+                                ]}
+                            />
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <Input
-                            label="Full Name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                        />
-                        <Input
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Phone Number"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            required
-                        />
-                        <Select
-                            label="Gender"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
-                            options={[
-                                { value: 'MALE', label: 'Male' },
-                                { value: 'FEMALE', label: 'Female' },
-                                { value: 'OTHER', label: 'Other' }
-                            ]}
-                        />
                         <Input
                             label="Date of Birth"
                             name="dob"
@@ -225,7 +278,7 @@ const EditMember = () => {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                rows={3}
+                                rows={2}
                             />
                         </div>
                     </div>

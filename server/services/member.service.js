@@ -59,6 +59,10 @@ class MemberService {
                 dob: dob,
                 address: data.address,
                 status: data.status?.toUpperCase() || 'ACTIVE',
+                height: data.height,
+                weight: data.weight,
+                workoutType: data.workoutType,
+                photo: data.photo,
                 // Membership Details
                 planId: planId,
                 planStartDate: startDate,
@@ -125,16 +129,30 @@ class MemberService {
 
     // Update member
     async updateMember(id, data) {
-        if (data.gender) {
-            data.gender = data.gender.toUpperCase();
-        }
-        if (data.status) {
-            data.status = data.status.toUpperCase();
+        const updateData = {};
+
+        // Map fields that are allowed to be updated
+        if (data.name) updateData.name = data.name;
+        if (data.email) updateData.email = data.email;
+        if (data.phone) updateData.phone = data.phone;
+        if (data.gender) updateData.gender = data.gender.toUpperCase();
+        if (data.address !== undefined) updateData.address = data.address;
+        if (data.photo) updateData.photo = data.photo;
+        if (data.height !== undefined) updateData.height = data.height;
+        if (data.weight !== undefined) updateData.weight = data.weight;
+        if (data.workoutType !== undefined) updateData.workoutType = data.workoutType;
+        if (data.status) updateData.status = data.status.toUpperCase();
+
+        // Handle date parsing
+        if (data.dob) {
+            updateData.dob = new Date(data.dob);
+        } else if (data.dob === null || data.dob === '') {
+            updateData.dob = null;
         }
 
         return await prisma.member.update({
             where: { id },
-            data,
+            data: updateData,
             include: {
                 plan: true,
             },

@@ -321,7 +321,9 @@ const EditInvoice = () => {
                         <div className="flex justify-between items-start border-b pb-6 mb-6">
                             <div>
                                 <img src="/gym_logo.png" alt="Logo" className="w-40 h-auto object-contain mb-2" />
-                                <h1 className="text-3xl font-bold text-indigo-800 uppercase tracking-wide">Atlas Fitness Elite</h1>
+                                <h1 className="text-3xl font-black uppercase tracking-wide">
+                                    <span className="text-black">Atlas Fitness</span> <span className="text-red-600">Elite</span>
+                                </h1>
                                 <p className="text-gray-500 text-xs">3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
                                 <p className="text-gray-500 text-xs">+91 99882 29441, +91 83175 29757</p>
                             </div>

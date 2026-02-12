@@ -506,10 +506,7 @@ const CreateInvoice = () => {
                 <div className="sticky top-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-bold text-gray-700 dark:text-gray-200">Live Preview</h2>
-                        <div className="flex gap-2">
-                            <button onClick={() => window.open(`https://wa.me/${formData.memberPhone}?text=Invoice%20${formData.invoiceNumber}%20Total:%20${formData.totalAmount}`, '_blank')} className="p-2 bg-green-500 text-white rounded hover:bg-green-600" title="WhatsApp">WA</button>
-                            <button onClick={() => window.location.href = `mailto:${formData.memberEmail}?subject=Invoice ${formData.invoiceNumber}&body=Please find attached invoice.`} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600" title="Email">Email</button>
-                        </div>
+                        {/* Buttons Removed */}
                     </div>
 
                     {/* A4 PAPER INVOICE */}
@@ -519,7 +516,9 @@ const CreateInvoice = () => {
                         <div className="flex justify-between items-start border-b pb-6 mb-6">
                             <div>
                                 <img src="/gym_logo.png" alt="Logo" className="w-40 h-auto object-contain mb-2" />
-                                <h1 className="text-3xl font-bold text-indigo-800 uppercase tracking-wide">Atlas Fitness Elite</h1>
+                                <h1 className="text-3xl font-black uppercase tracking-wide">
+                                    <span className="text-black">Atlas Fitness</span> <span className="text-red-600">Elite</span>
+                                </h1>
                                 <p className="text-gray-500">3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
                                 <p className="text-gray-500">+91 99882 29441, +91 83175 29757 | info@atlasfitness.com</p>
                                 <p className="text-gray-500 font-medium">GSTIN: 36BNEPV0615C1ZA</p>

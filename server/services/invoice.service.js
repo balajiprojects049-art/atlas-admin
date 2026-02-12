@@ -27,10 +27,13 @@ class InvoiceService {
 
     // Create a new invoice
     async createInvoice(data) {
+        // Extract fields that are not in the Invoice schema but used for calculation
+        const { gstRate: inputGstRate, ...invoiceData } = data;
+
         const invoiceNumber = await this.generateInvoiceNumber();
 
         // Calculate GST amounts
-        const gstRate = data.gstRate || 18;
+        const gstRate = inputGstRate || 18;
         const gstAmount = (data.amount * gstRate) / 100;
         const cgst = gstAmount / 2;
         const sgst = gstAmount / 2;
@@ -38,7 +41,7 @@ class InvoiceService {
 
         return await prisma.invoice.create({
             data: {
-                ...data,
+                ...invoiceData,
                 invoiceNumber,
                 gstAmount,
                 cgst,
@@ -97,23 +100,49 @@ class InvoiceService {
 
     // Update invoice
     async updateInvoice(id, data) {
-        if (data.paymentStatus) {
-            data.paymentStatus = data.paymentStatus.toUpperCase();
+        const {
+            gstRate: inputGstRate,
+            discount,
+            discountType,
+            paidAmount,
+            notes,
+            trainerName,
+            ...otherData
+        } = data;
+
+        const updateData = { ...otherData };
+
+        if (updateData.paymentStatus) {
+            updateData.paymentStatus = updateData.paymentStatus.toUpperCase();
         }
 
         // Recalculate totals if amount changes
-        if (data.amount) {
-            const gstRate = data.gstRate || 18;
-            const gstAmount = (data.amount * gstRate) / 100;
-            data.cgst = gstAmount / 2;
-            data.sgst = gstAmount / 2;
-            data.gstAmount = gstAmount;
-            data.totalAmount = data.amount + gstAmount + (data.lateFee || 0);
+        if (updateData.amount || updateData.amount === 0) {
+            const gstRate = inputGstRate || 18;
+            const gstAmount = (updateData.amount * gstRate) / 100;
+            updateData.cgst = gstAmount / 2;
+            updateData.sgst = gstAmount / 2;
+            updateData.gstAmount = gstAmount;
+            updateData.totalAmount = updateData.amount + gstAmount + (updateData.lateFee || 0);
         }
+
+        // Only keep fields that exist in the Prisma schema to avoid errors
+        const validFields = [
+            'amount', 'gstAmount', 'cgst', 'sgst', 'lateFee', 'totalAmount',
+            'paymentStatus', 'dueDate', 'paidDate', 'razorpayOrderId',
+            'razorpayPaymentId', 'paymentMethod'
+        ];
+
+        const prismaData = {};
+        validFields.forEach(field => {
+            if (updateData[field] !== undefined) {
+                prismaData[field] = updateData[field];
+            }
+        });
 
         return await prisma.invoice.update({
             where: { id },
-            data,
+            data: prismaData,
             include: {
                 member: true,
                 plan: true,

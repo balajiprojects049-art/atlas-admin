@@ -52,6 +52,9 @@ model Member {
   dob            DateTime?
   address        String?
   photo          String?
+  height         String?   // e.g. 5'11" or 180cm
+  weight         String?   // e.g. 75kg
+  workoutType    String?   // e.g. Cardio, Strength, Crossfit
   planId         String?
   planStartDate  DateTime?
   planEndDate    DateTime?
@@ -136,4 +139,5 @@ enum PaymentStatus {
   PAID
   PENDING
   OVERDUE
+  PARTIAL
 }

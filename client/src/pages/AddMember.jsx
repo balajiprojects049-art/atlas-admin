@@ -20,7 +20,10 @@ const AddMember = () => {
         planDuration: '',
         planAmount: '',
         startDate: new Date().toISOString().split('T')[0],
-        status: 'active'
+        status: 'active',
+        height: '',
+        weight: '',
+        workoutType: ''
     });
 
     const gymPlans = [
@@ -168,6 +171,42 @@ const AddMember = () => {
                                 placeholder="Enter full address"
                             />
                         </div>
+                    </div>
+
+                    <h2 className="text-xl font-semibold text-light-text-primary dark:text-dark-text-primary mb-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        Fitness Details (Optional)
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <Input
+                            label="Height (e.g. 5'11)"
+                            name="height"
+                            value={formData.height}
+                            onChange={handleChange}
+                            placeholder="Optional"
+                        />
+                        <Input
+                            label="Weight (e.g. 75 kg)"
+                            name="weight"
+                            value={formData.weight}
+                            onChange={handleChange}
+                            placeholder="Optional"
+                        />
+                        <Select
+                            label="Workout Type"
+                            name="workoutType"
+                            value={formData.workoutType}
+                            onChange={handleChange}
+                            options={[
+                                { value: 'Cardio', label: 'Cardio' },
+                                { value: 'Strength Training', label: 'Strength Training' },
+                                { value: 'Crossfit', label: 'Crossfit' },
+                                { value: 'Yoga', label: 'Yoga' },
+                                { value: 'Zumba', label: 'Zumba' },
+                                { value: 'Personal Training', label: 'Personal Training' }
+                            ]}
+                            placeholder="Select Workout Type"
+                        />
                     </div>
 
                     <h2 className="text-xl font-semibold text-light-text-primary dark:text-dark-text-primary mb-6 pt-6 border-t border-gray-200 dark:border-gray-700">

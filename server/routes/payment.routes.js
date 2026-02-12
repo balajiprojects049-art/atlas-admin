@@ -22,7 +22,7 @@ router.post('/create', authMiddleware, async (req, res) => {
         }
 
         const options = {
-            amount: invoice.totalAmount * 100, // amount in paise
+            amount: Math.round(invoice.totalAmount * 100), // amount in paise (integer)
             currency: 'INR',
             receipt: invoice.invoiceNumber,
         };

@@ -9,6 +9,9 @@ import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import AddMember from './pages/AddMember';
 import Invoices from './pages/Invoices';
+import CreateInvoice from './pages/CreateInvoice';
+import EditInvoice from './pages/EditInvoice';
+import InvoiceDetails from './pages/InvoiceDetails';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import './index.css';
@@ -74,6 +77,30 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <Invoices />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/invoices/create"
+                element={
+                    <ProtectedRoute>
+                        <CreateInvoice />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/invoices/edit/:id"
+                element={
+                    <ProtectedRoute>
+                        <EditInvoice />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/invoices/:id"
+                element={
+                    <ProtectedRoute>
+                        <InvoiceDetails />
                     </ProtectedRoute>
                 }
             />

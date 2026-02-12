@@ -20,27 +20,22 @@ const Dashboard = () => {
         try {
             setLoading(true);
 
-            // Fetch analytics (will create mock data if backend not ready)
-            const mockStats = {
-                totalRevenue: 125000,
-                activeMembers: 48,
-                todayCollections: 8500,
-                overduePayments: 5,
-                revenueGrowth: 12,
-                membersGrowth: 8,
-            };
+            // Fetch real dashboard data
+            const [statsResponse, invoicesResponse] = await Promise.all([
+                analyticsAPI.getDashboard(),
+                invoiceAPI.getAll({ limit: 5 })
+            ]);
 
-            const mockInvoices = [
-                { id: '1', invoiceNumber: 'INV-2026-0001', memberName: 'John Doe', amount: 3000, dueDate: '2026-02-15', status: 'pending' },
-                { id: '2', invoiceNumber: 'INV-2026-0002', memberName: 'Sarah Smith', amount: 4500, dueDate: '2026-02-10', status: 'paid' },
-                { id: '3', invoiceNumber: 'INV-2026-0003', memberName: 'Mike Johnson', amount: 2000, dueDate: '2026-02-05', status: 'overdue' },
-            ];
+            if (statsResponse.data.success) {
+                setStats(statsResponse.data.data || {});
+            }
 
-            setStats(mockStats);
-            setRecentInvoices(mockInvoices);
+            if (invoicesResponse.data.success) {
+                setRecentInvoices(invoicesResponse.data.invoices || []);
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            toast.error('Failed to load dashboard data');
+            // toast.error('Failed to load dashboard data'); // Silently fail or show warning
         } finally {
             setLoading(false);
         }
@@ -53,7 +48,7 @@ const Dashboard = () => {
         },
         {
             header: 'Member',
-            accessor: 'memberName',
+            render: (row) => row.member?.name || 'Unknown',
         },
         {
             header: 'Amount',

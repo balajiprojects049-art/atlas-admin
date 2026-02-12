@@ -1,9 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatCard } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { formatCurrency } from '../utils/helpers';
+import { analyticsAPI } from '../services/api';
 
 const Reports = () => {
+    const [stats, setStats] = useState({
+        totalRevenue: 0,
+        activeMembers: 0,
+        renewalRate: 0
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await analyticsAPI.getDashboard();
+                if (response.data.success) {
+                    setStats({
+                        totalRevenue: response.data.stats.totalRevenue || 0,
+                        activeMembers: response.data.stats.activeMembers || 0,
+                        renewalRate: 0 // Backend doesn't provide this yet
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching report stats:', error);
+            }
+        };
+        fetchStats();
+    }, []);
+
     const handleExportCSV = () => {
         alert('CSV export functionality will be implemented with backend');
     };
@@ -37,18 +62,18 @@ const Reports = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title="Total Revenue (This Month)"
-                    value={formatCurrency(45000)}
+                    title="Total Revenue"
+                    value={formatCurrency(stats.totalRevenue)}
                     color="success"
                 />
                 <StatCard
-                    title="New Members (This Month)"
-                    value="12"
+                    title="Active Members"
+                    value={stats.activeMembers}
                     color="info"
                 />
                 <StatCard
                     title="Renewal Rate"
-                    value="85%"
+                    value={`${stats.renewalRate}%`}
                     color="accent"
                 />
             </div>

@@ -24,21 +24,20 @@ const Invoices = () => {
     const fetchInvoices = async () => {
         try {
             setLoading(true);
+            const response = await invoiceAPI.getAll({
+                page: currentPage,
+                limit: 10,
+                search: search,
+                status: statusFilter
+            });
 
-            // Mock data
-            const mockInvoices = [
-                { id: '1', invoiceNumber: 'INV-2026-0001', memberName: 'John Doe', memberId: 'MEM-0001', amount: 1000, gstAmount: 180, totalAmount: 1180, dueDate: '2026-02-15', status: 'pending' },
-                { id: '2', invoiceNumber: 'INV-2026-0002', memberName: 'Sarah Smith', memberId: 'MEM-0002', amount: 2700, gstAmount: 486, totalAmount: 3186, dueDate: '2026-02-10', status: 'paid', paidDate: '2026-02-09' },
-                { id: '3', invoiceNumber: 'INV-2026-0003', memberName: 'Mike Johnson', memberId: 'MEM-0003', amount: 10000, gstAmount: 1800, totalAmount: 11800, dueDate: '2026-02-05', status: 'overdue' },
-                { id: '4', invoiceNumber: 'INV-2026-0004', memberName: 'Emma Wilson', memberId: 'MEM-0004', amount: 1000, gstAmount: 180, totalAmount: 1180, dueDate: '2026-02-20', status: 'pending' },
-                { id: '5', invoiceNumber: 'INV-2026-0005', memberName: 'David Brown', memberId: 'MEM-0005', amount: 2700, gstAmount: 486, totalAmount: 3186, dueDate: '2026-02-12', status: 'paid', paidDate: '2026-02-11' },
-            ];
-
-            setInvoices(mockInvoices);
-            setTotalPages(1);
+            if (response.data.success) {
+                setInvoices(response.data.invoices);
+                setTotalPages(response.data.totalPages);
+            }
         } catch (error) {
             console.error('Error fetching invoices:', error);
-            toast.error('Failed to load invoices');
+            // toast.error('Failed to load invoices');
         } finally {
             setLoading(false);
         }
@@ -53,8 +52,8 @@ const Invoices = () => {
             header: 'Member',
             render: (row) => (
                 <div>
-                    <div className="font-medium">{row.memberName}</div>
-                    <div className="text-xs text-light-text-muted dark:text-dark-text-muted">{row.memberId}</div>
+                    <div className="font-medium">{row.member?.name || 'Unknown'}</div>
+                    <div className="text-xs text-light-text-muted dark:text-dark-text-muted">{row.member?.memberId || '-'}</div>
                 </div>
             ),
         },
@@ -73,7 +72,7 @@ const Invoices = () => {
         },
         {
             header: 'Status',
-            render: (row) => <PaymentStatusBadge status={row.status} />,
+            render: (row) => <PaymentStatusBadge status={row.paymentStatus} />,
         },
         {
             header: 'Actions',
@@ -88,6 +87,17 @@ const Invoices = () => {
                         }}
                     >
                         View
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/invoices/edit/${row.id}`);
+                        }}
+                    >
+                        Edit
                     </Button>
                 </div>
             ),

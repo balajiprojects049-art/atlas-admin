@@ -21,12 +21,48 @@ class MemberService {
     async createMember(data) {
         const memberId = await this.generateMemberId();
 
+        // Find Plan ID based on Name if not provided
+        let planId = data.planId;
+        let duration = data.planDuration; // Expecting number of months
+
+        if (!planId && data.planName) {
+            const plan = await prisma.plan.findFirst({
+                where: { name: data.planName }
+            });
+            if (plan) {
+                planId = plan.id;
+                duration = plan.duration;
+            }
+        }
+
+        // Calculate Plan Dates
+        // Frontend sends 'startDate'
+        const startDate = data.startDate ? new Date(data.startDate) : new Date();
+        const endDate = new Date(startDate);
+        if (duration) {
+            endDate.setMonth(endDate.getMonth() + parseInt(duration));
+        }
+
+        // Validating and Formatting DOB
+        let dob = null;
+        if (data.dob && data.dob !== '') {
+            dob = new Date(data.dob);
+        }
+
         return await prisma.member.create({
             data: {
-                ...data,
                 memberId,
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
                 gender: data.gender?.toUpperCase(),
+                dob: dob,
+                address: data.address,
                 status: data.status?.toUpperCase() || 'ACTIVE',
+                // Membership Details
+                planId: planId,
+                planStartDate: startDate,
+                planEndDate: endDate,
             },
             include: {
                 plan: true,

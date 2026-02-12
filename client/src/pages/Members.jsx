@@ -23,18 +23,16 @@ const Members = () => {
     const fetchMembers = async () => {
         try {
             setLoading(true);
+            const response = await memberAPI.getAll({
+                page: currentPage,
+                limit: 10,
+                search: search
+            });
 
-            // Mock data for now
-            const mockMembers = [
-                { id: '1', memberId: 'MEM-0001', name: 'John Doe', email: 'john@example.com', phone: '9876543210', planName: 'Monthly', planEndDate: '2026-03-15' },
-                { id: '2', memberId: 'MEM-0002', name: 'Sarah Smith', email: 'sarah@example.com', phone: '9876543211', planName: 'Quarterly', planEndDate: '2026-04-20' },
-                { id: '3', memberId: 'MEM-0003', name: 'Mike Johnson', email: 'mike@example.com', phone: '9876543212', planName: 'Yearly', planEndDate: '2027-02-10' },
-                { id: '4', memberId: 'MEM-0004', name: 'Emma Wilson', email: 'emma@example.com', phone: '9876543213', planName: 'Monthly', planEndDate: '2026-02-28' },
-                { id: '5', memberId: 'MEM-0005', name: 'David Brown', email: 'david@example.com', phone: '9876543214', planName: 'Quarterly', planEndDate: '2026-05-15' },
-            ];
-
-            setMembers(mockMembers);
-            setTotalPages(1);
+            if (response.data.success) {
+                setMembers(response.data.members);
+                setTotalPages(response.data.totalPages);
+            }
         } catch (error) {
             console.error('Error fetching members:', error);
             toast.error('Failed to load members');
@@ -62,7 +60,7 @@ const Members = () => {
         },
         {
             header: 'Plan',
-            accessor: 'planName',
+            render: (row) => row.plan?.name || '-',
         },
         {
             header: 'Expires On',

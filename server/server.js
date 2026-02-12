@@ -14,10 +14,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Test database connection
-prisma.$connect()
-    .then(() => console.log('✅ Neon DB (PostgreSQL) Connected Successfully'))
-    .catch((err) => console.error('❌ Database Connection Error:', err));
+// Database connection with proper error handling
+let dbConnected = false;
+
+const connectDatabase = async () => {
+    if (dbConnected) {
+        console.log('✅ Database already connected');
+        return;
+    }
+
+    try {
+        await prisma.$connect();
+        dbConnected = true;
+        console.log('✅ Neon DB (PostgreSQL) Connected Successfully');
+        console.log('📊 Database URL:', process.env.DATABASE_URL ? 'Set' : 'Missing');
+    } catch (err) {
+        console.error('❌ Database Connection Error:', err.message);
+        console.error('Full error:', err);
+        // Don't throw - let the app start but log the error
+    }
+};
+
+// Connect to database
+connectDatabase();
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
@@ -30,15 +49,37 @@ app.use('/api/plans', require('./routes/plan.routes'));
 
 // Health Check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Gym Billing API is running' });
+    res.json({
+        status: 'OK',
+        message: 'Gym Billing API is running',
+        database: dbConnected ? 'Connected' : 'Disconnected',
+        environment: process.env.NODE_ENV || 'development'
+    });
 });
 
-// Error Handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
+// 404 Handler
+app.use((req, res, next) => {
+    res.status(404).json({
         success: false,
-        message: err.message || 'Server Error',
+        message: `Route ${req.method} ${req.url} not found`
+    });
+});
+
+// Error Handler - MUST be last
+app.use((err, req, res, next) => {
+    console.error('❌ Global Error Handler:');
+    console.error('Error:', err.message);
+    console.error('Stack:', err.stack);
+    console.error('Request:', {
+        method: req.method,
+        url: req.url,
+        body: req.body
+    });
+
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 });
 

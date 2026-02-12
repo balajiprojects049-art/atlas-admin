@@ -7,25 +7,43 @@ const { authMiddleware } = require('../middleware/auth');
 // Login
 router.post('/login', async (req, res) => {
     try {
+        console.log('🔐 Login attempt:', { email: req.body?.email, hasPassword: !!req.body?.password });
+
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            console.log('❌ Missing credentials');
+            return res.status(400).json({
+                success: false,
+                message: 'Email and password are required',
+            });
+        }
+
         // Find user
+        console.log('🔍 Finding user:', email);
         const user = await userService.findByEmail(email);
+
         if (!user) {
+            console.log('❌ User not found:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password',
             });
         }
+
+        console.log('✅ User found:', { id: user.id, email: user.email });
 
         // Check password
         const isPasswordValid = await userService.comparePassword(password, user.password);
         if (!isPasswordValid) {
+            console.log('❌ Invalid password for:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password',
             });
         }
+
+        console.log('✅ Password valid, generating token');
 
         // Generate JWT
         const token = jwt.sign(
@@ -33,6 +51,8 @@ router.post('/login', async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
+
+        console.log('✅ Login successful for:', email);
 
         res.json({
             success: true,
@@ -45,9 +65,12 @@ router.post('/login', async (req, res) => {
             },
         });
     } catch (error) {
+        console.error('❌ Login error:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: error.message || 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });

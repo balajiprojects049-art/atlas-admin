@@ -17,7 +17,8 @@ const processMemberData = (body, file) => {
     const data = { ...body };
 
     // Convert numeric fields from string to number
-    const numericFields = ['planAmount', 'planDuration', 'weight', 'height', 'price']; // Added price just in case
+    // REMOVED 'weight' and 'height' because Prisma Schema defines them as String
+    const numericFields = ['planAmount', 'planDuration', 'price'];
     numericFields.forEach(field => {
         if (data[field]) {
             // Remove non-numeric characters (like 'kg', 'cm') except dot

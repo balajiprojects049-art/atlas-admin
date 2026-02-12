@@ -112,6 +112,8 @@ export const analyticsAPI = {
     getDashboard: () => api.get('/analytics/dashboard'),
     getRevenue: (params) => api.get('/analytics/revenue', { params }),
     getMemberStats: () => api.get('/analytics/members'),
+    exportCSV: () => api.get('/analytics/export/csv', { responseType: 'blob' }),
+    exportPDF: () => api.get('/analytics/export/pdf', { responseType: 'blob' }),
 };
 
 export const settingsAPI = {

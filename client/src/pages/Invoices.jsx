@@ -7,6 +7,7 @@ import { PaymentStatusBadge } from '../components/ui/Badge';
 import { invoiceAPI } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import toast from 'react-hot-toast';
+import { Modal } from '../components/ui/Modal';
 
 const Invoices = () => {
     const navigate = useNavigate();
@@ -16,6 +17,8 @@ const Invoices = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [invoiceToDelete, setInvoiceToDelete] = useState(null);
 
     useEffect(() => {
         fetchInvoices();
@@ -106,18 +109,10 @@ const Invoices = () => {
                         Edit
                     </button>
                     <button
-                        onClick={async (e) => {
+                        onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
-                                try {
-                                    await invoiceAPI.delete(row.id);
-                                    toast.success('Invoice deleted successfully');
-                                    fetchInvoices(); // Refresh list
-                                } catch (error) {
-                                    console.error('Delete error:', error);
-                                    toast.error('Failed to delete invoice');
-                                }
-                            }
+                            setInvoiceToDelete(row);
+                            setDeleteModalOpen(true);
                         }}
                         className="flex items-center gap-1.5 p-1.5 px-3 rounded-lg text-rose-600 bg-rose-50/50 hover:bg-rose-100 dark:text-rose-400 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 transition-all duration-300 font-semibold text-[11px] border border-rose-200/50 dark:border-rose-800/50 hover:border-rose-300 dark:hover:border-rose-700 shadow-sm active:scale-95 group"
                         title="Delete Invoice"
@@ -189,6 +184,45 @@ const Invoices = () => {
                     />
                 )}
             </div>
+            {/* Delete Confirmation Modal */}
+            <Modal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                title="Delete Invoice"
+            >
+                <div className="space-y-4">
+                    <p className="text-gray-600 dark:text-gray-300">
+                        Are you sure you want to delete invoice <span className="font-bold text-gray-900 dark:text-white">{invoiceToDelete?.invoiceNumber}</span>?
+                        This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary" // Actually danger would be better but primary is red/brand? primary is usually brand color. 
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={async () => {
+                                if (!invoiceToDelete) return;
+                                try {
+                                    await invoiceAPI.delete(invoiceToDelete.id);
+                                    toast.success('Invoice deleted successfully');
+                                    fetchInvoices();
+                                    setDeleteModalOpen(false);
+                                } catch (error) {
+                                    console.error('Delete error:', error);
+                                    toast.error('Failed to delete invoice');
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

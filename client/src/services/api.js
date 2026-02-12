@@ -1,7 +1,17 @@
 import axios from 'axios';
 
 // Production-safe API URL configuration
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// In production (Vercel), always use /api
+// In development, use environment variable or localhost
+const API_URL = import.meta.env.PROD
+    ? '/api'
+    : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+
+console.log('🔧 API Configuration:', {
+    mode: import.meta.env.MODE,
+    isProd: import.meta.env.PROD,
+    apiUrl: API_URL
+});
 
 // Create axios instance
 const api = axios.create({

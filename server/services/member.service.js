@@ -10,12 +10,13 @@ class MemberService {
         });
 
         if (!lastMember) {
-            return 'MEM-0001';
+            return 'AFE-001';
         }
 
-        const lastNumber = parseInt(lastMember.memberId.split('-')[1]);
-        const newNumber = (lastNumber + 1).toString().padStart(4, '0');
-        return `MEM-${newNumber}`;
+        const parts = lastMember.memberId.split('-');
+        const lastNumber = parseInt(parts[parts.length - 1]);
+        const newNumber = (lastNumber + 1).toString().padStart(3, '0');
+        return `AFE-${newNumber}`;
     }
 
     // Create a new member

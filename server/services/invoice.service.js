@@ -57,13 +57,61 @@ class InvoiceService {
             },
         });
 
-        // If created as PAID immediately, send email
-        if (newInvoice.paymentStatus === 'PAID' && newInvoice.member?.email) {
-            console.log(`📧 Invoice ${newInvoice.invoiceNumber} created as PAID. Sending receipt to ${newInvoice.member.email}`);
-            emailService.sendInvoiceEmail(newInvoice).catch(err => console.error('Invoice email error:', err));
+        // If created as PAID immediately, trigger renewal and send email
+        if (newInvoice.paymentStatus === 'PAID') {
+            await this.handleMembershipRenewal(newInvoice.memberId, newInvoice.planId);
+
+            if (newInvoice.member?.email) {
+                console.log(`📧 Invoice ${newInvoice.invoiceNumber} created as PAID. Sending receipt to ${newInvoice.member.email}`);
+                emailService.sendInvoiceEmail(newInvoice).catch(err => console.error('Invoice email error:', err));
+            }
         }
 
         return newInvoice;
+    }
+
+    // Helper to renew membership based on plan duration
+    async handleMembershipRenewal(memberId, planId) {
+        try {
+            const member = await prisma.member.findUnique({ where: { id: memberId } });
+            const plan = await prisma.plan.findUnique({ where: { id: planId } });
+
+            if (!member || !plan || !plan.duration) return;
+
+            const today = new Date();
+            let newStartDate = new Date();
+            let newEndDate = new Date();
+
+            // Check if member is currently active and not expired
+            if (member.planEndDate && new Date(member.planEndDate) > today) {
+                // Extend existing plan
+                newStartDate = new Date(member.planStartDate); //Keep original start
+                const currentEnd = new Date(member.planEndDate);
+                currentEnd.setMonth(currentEnd.getMonth() + plan.duration);
+                newEndDate = currentEnd;
+                console.log(`🔄 Extending membership for ${member.name}. New End Date: ${newEndDate.toISOString()}`);
+            } else {
+                // Expired or new: Start fresh from today
+                newStartDate = today;
+                const end = new Date(today);
+                end.setMonth(today.getMonth() + plan.duration);
+                newEndDate = end;
+                console.log(`🆕 Renewing expired membership for ${member.name}. New End Date: ${newEndDate.toISOString()}`);
+            }
+
+            await prisma.member.update({
+                where: { id: memberId },
+                data: {
+                    planId: planId,
+                    planStartDate: newStartDate,
+                    planEndDate: newEndDate,
+                    status: 'ACTIVE'
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error renewing membership:', error);
+        }
     }
 
     // Get all invoices with pagination and filters
@@ -159,10 +207,14 @@ class InvoiceService {
             },
         });
 
-        // If updated to PAID, send email
-        if (updatedInvoice.paymentStatus === 'PAID' && updatedInvoice.member?.email) {
-            console.log(`📧 Invoice ${updatedInvoice.invoiceNumber} paid. Sending receipt to ${updatedInvoice.member.email}`);
-            emailService.sendInvoiceEmail(updatedInvoice).catch(err => console.error('Invoice email error:', err));
+        // If updated to PAID, trigger renewal and send email
+        if (updatedInvoice.paymentStatus === 'PAID') {
+            await this.handleMembershipRenewal(updatedInvoice.memberId, updatedInvoice.planId);
+
+            if (updatedInvoice.member?.email) {
+                console.log(`📧 Invoice ${updatedInvoice.invoiceNumber} paid. Sending receipt to ${updatedInvoice.member.email}`);
+                emailService.sendInvoiceEmail(updatedInvoice).catch(err => console.error('Invoice email error:', err));
+            }
         }
 
         return updatedInvoice;
@@ -193,6 +245,9 @@ class InvoiceService {
                 plan: true,
             },
         });
+
+        // Trigger renewal
+        await this.handleMembershipRenewal(paidInvoice.memberId, paidInvoice.planId);
 
         // Send Payment Receipt Email
         if (paidInvoice.member?.email) {

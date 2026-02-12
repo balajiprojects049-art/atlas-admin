@@ -3,6 +3,7 @@ import { StatCard } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { formatCurrency } from '../utils/helpers';
 import { analyticsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Reports = () => {
     const [stats, setStats] = useState({
@@ -29,12 +30,38 @@ const Reports = () => {
         fetchStats();
     }, []);
 
-    const handleExportCSV = () => {
-        alert('CSV export functionality will be implemented with backend');
+    const handleExportCSV = async () => {
+        try {
+            const response = await analyticsAPI.exportCSV();
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Revenue_Report.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            toast.success('CSV Report Exported!');
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Failed to export CSV');
+        }
     };
 
-    const handleExportPDF = () => {
-        alert('PDF export functionality will be implemented with backend');
+    const handleExportPDF = async () => {
+        try {
+            const response = await analyticsAPI.exportPDF();
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Revenue_Report.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            toast.success('PDF Report Exported!');
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Failed to export PDF');
+        }
     };
 
     return (

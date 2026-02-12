@@ -39,6 +39,40 @@ const InvoiceDetails = () => {
         window.print();
     };
 
+    const handleDownload = async () => {
+        try {
+            const response = await invoiceAPI.downloadPDF(id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice_${invoice.invoiceNumber}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error('Download failed:', error);
+            toast.error('Failed to download invoice');
+        }
+    };
+
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Invoice #${invoice.invoiceNumber}`,
+                    text: `Here is your invoice for Atlas Fitness. Total: ${formatCurrency(invoice.totalAmount)}`,
+                    url: window.location.href,
+                });
+            } catch (error) {
+                console.error('Error sharing:', error);
+            }
+        } else {
+            // Fallback: Copy Link
+            navigator.clipboard.writeText(window.location.href);
+            toast.success('Link copied to clipboard!');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -51,7 +85,7 @@ const InvoiceDetails = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between no-print">
+            <div className="flex items-center justify-between print:hidden">
                 <Button variant="ghost" onClick={() => navigate('/invoices')} className="flex items-center gap-2">
                     <ArrowLeft size={20} /> Back to Invoices
                 </Button>
@@ -59,17 +93,17 @@ const InvoiceDetails = () => {
                     <Button variant="outline" onClick={handlePrint}>
                         <Printer size={20} className="mr-2" /> Print
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={handleDownload}>
                         <Download size={20} className="mr-2" /> Download
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={handleShare}>
                         <Share2 size={20} className="mr-2" /> Share
                     </Button>
                 </div>
             </div>
 
             {/* Invoice Container - White Paper Style */}
-            <div className="bg-white text-gray-900 p-8 md:p-12 rounded-lg shadow-lg max-w-4xl mx-auto print:shadow-none print:w-full print:max-w-none">
+            <div id="invoice-preview" className="bg-white text-gray-900 p-8 md:p-12 rounded-lg shadow-lg max-w-4xl mx-auto print:shadow-none print:w-full print:max-w-none">
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
                     <div>

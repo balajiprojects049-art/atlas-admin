@@ -40,7 +40,7 @@ export const Table = ({
                             <th
                                 key={index}
                                 className={`
-                  px-6 py-4 text-left text-xs font-semibold 
+                  px-6 py-4 text-left text-xs font-semibold whitespace-nowrap
                   text-light-text-primary dark:text-dark-text-primary uppercase tracking-wider
                   ${column.className || ''}
                 `}
@@ -68,7 +68,7 @@ export const Table = ({
                                 <td
                                     key={colIndex}
                                     className={`
-                    px-6 py-4 text-sm text-light-text-primary dark:text-dark-text-primary
+                    px-6 py-4 text-sm whitespace-nowrap text-light-text-primary dark:text-dark-text-primary
                     ${column.cellClassName || ''}
                   `}
                                 >

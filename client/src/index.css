@@ -124,24 +124,23 @@ body {
 
 /* Print Styles */
 @media print {
-    body * {
-        visibility: hidden;
-    }
+    /* Layout components are hidden via 'print:hidden' classes in React */
 
-    #invoice-preview,
-    #invoice-preview * {
-        visibility: visible;
-    }
-
+    /* Ensure invoice preview is visible and styled correctly */
     #invoice-preview {
-        position: absolute;
-        left: 0;
-        top: 0;
         width: 100%;
         margin: 0;
         padding: 0;
+        background-color: white !important;
+        color: black !important;
         box-shadow: none !important;
         border: none !important;
+    }
+
+    /* Ensure text colors are forced to black for better printing unless colored */
+    #invoice-preview * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* Hide scrollbars during print */
@@ -151,6 +150,6 @@ body {
 
     @page {
         size: auto;
-        margin: 0mm;
+        margin: 5mm;
     }
 }

@@ -112,6 +112,12 @@ const MemberDetails = () => {
                     <Button variant="outline" onClick={() => navigate(`/members/edit/${member.id}`)}>
                         Edit Profile
                     </Button>
+                    <Button
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                        onClick={() => navigate('/invoices/create', { state: { memberId: member.id, isRenewal: true } })}
+                    >
+                        Renew Plan
+                    </Button>
                     <Button variant="primary" onClick={() => navigate('/invoices/create', { state: { memberId: member.id } })}>
                         Create Invoice
                     </Button>

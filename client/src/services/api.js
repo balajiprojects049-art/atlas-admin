@@ -52,6 +52,7 @@ export const invoiceAPI = {
     create: (data) => api.post('/invoices', data),
     update: (id, data) => api.put(`/invoices/${id}`, data),
     delete: (id) => api.delete(`/invoices/${id}`),
+    downloadPDF: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
 };
 
 // Payment APIs
@@ -66,6 +67,8 @@ export const analyticsAPI = {
     getDashboard: () => api.get('/analytics/dashboard'),
     getRevenue: (params) => api.get('/analytics/revenue', { params }),
     getMembers: (params) => api.get('/analytics/members', { params }),
+    exportCSV: () => api.get('/analytics/export/csv', { responseType: 'blob' }),
+    exportPDF: () => api.get('/analytics/export/pdf', { responseType: 'blob' }),
 };
 
 // Settings APIs
@@ -79,6 +82,12 @@ export const settingsAPI = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
     },
+};
+
+// Plan APIs
+export const planAPI = {
+    getAll: (params) => api.get('/plans', { params }),
+    getById: (id) => api.get(`/plans/${id}`),
 };
 
 export default api;

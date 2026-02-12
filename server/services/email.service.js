@@ -62,8 +62,9 @@ class EmailService {
 
             doc.fontSize(10).font('Helvetica-Bold').text('Bill To:', 50, customerInfoTop);
             doc.font('Helvetica').text(invoice.member.name, 50, customerInfoTop + 15);
-            doc.text(invoice.member.email, 50, customerInfoTop + 30);
-            doc.text(invoice.member.phone || '', 50, customerInfoTop + 45);
+            doc.text(`ID: ${invoice.member.memberId || 'N/A'}`, 50, customerInfoTop + 30);
+            doc.text(invoice.member.email, 50, customerInfoTop + 45);
+            doc.text(invoice.member.phone || '', 50, customerInfoTop + 60);
 
             doc.font('Helvetica-Bold').text('Invoice Number:', 400, customerInfoTop);
             doc.font('Helvetica').text(invoice.invoiceNumber, 500, customerInfoTop);

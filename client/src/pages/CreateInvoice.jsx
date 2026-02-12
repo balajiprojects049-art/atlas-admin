@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Input, Select } from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { memberAPI, invoiceAPI, analyticsAPI, paymentAPI } from '../services/api';
+import { memberAPI, invoiceAPI, analyticsAPI, paymentAPI, planAPI } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { Printer, Share2, Download, Mail } from 'lucide-react'; // Assuming lucide-react or generic icons
@@ -12,6 +12,7 @@ import { Printer, Share2, Download, Mail } from 'lucide-react'; // Assuming luci
 
 const CreateInvoice = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [previousDue, setPreviousDue] = useState(0);
@@ -55,10 +56,34 @@ const CreateInvoice = () => {
         notes: ''
     });
 
-    // Fetch Members on Mount
+    const [plans, setPlans] = useState([]);
+
+    // Fetch Members and Plans on Mount
     useEffect(() => {
         fetchMembers();
+        fetchPlans();
     }, []);
+
+    const fetchPlans = async () => {
+        try {
+            const response = await planAPI.getAll();
+            if (response.data.success) {
+                setPlans(response.data.plans);
+            }
+        } catch (error) {
+            console.error('Error fetching plans:', error);
+        }
+    };
+
+    // Handle initial pre-fill from navigation state once members are loaded
+    useEffect(() => {
+        if (members.length > 0 && location.state?.memberId) {
+            const memberId = location.state.memberId;
+            // Manually trigger the change logic
+            const mockEvent = { target: { value: memberId, name: 'memberId' } };
+            handleMemberChange(mockEvent);
+        }
+    }, [members, location.state]);
 
     // Calculate Totals whenever relevant fields change
     useEffect(() => {
@@ -95,6 +120,37 @@ const CreateInvoice = () => {
         const member = members.find(m => m.id === memberId);
 
         if (member) {
+            const isRenewal = location.state?.isRenewal;
+            let billingStart = member.planStartDate ? member.planStartDate.split('T')[0] : '';
+            let billingEnd = member.planEndDate ? member.planEndDate.split('T')[0] : '';
+            let dueDate = member.planEndDate ? member.planEndDate.split('T')[0] : '';
+            let notes = '';
+
+            if (isRenewal) {
+                // If strictly renewing, start from where previous ended, or today if expired
+                const today = new Date();
+                const currentEnd = member.planEndDate ? new Date(member.planEndDate) : null;
+
+                if (currentEnd && currentEnd > today) {
+                    billingStart = currentEnd.toISOString().split('T')[0]; // Start from old expiry
+                } else {
+                    billingStart = today.toISOString().split('T')[0]; // Start from today
+                }
+
+                // Temporary end date placeholder (will update when plan ID logic runs fully or just clear it to let duration calc take over if I had that logic here)
+                // For now, let's just clear End Date so it forces attention or use the same logic as 'handleMembershipRenewal' to estimate
+                // But since Member object has plan details, let's try to be smart if plan exists
+                if (member.plan?.duration) {
+                    const start = new Date(billingStart);
+                    const end = new Date(start);
+                    end.setMonth(end.getMonth() + member.plan.duration);
+                    billingEnd = end.toISOString().split('T')[0];
+                    dueDate = billingEnd;
+                }
+
+                notes = `Renewal for ${member.plan?.name || 'Membership'}`;
+            }
+
             setFormData(prev => ({
                 ...prev,
                 memberId: member.id,
@@ -103,12 +159,47 @@ const CreateInvoice = () => {
                 memberPhone: member.phone,
                 planId: member.planId || '',
                 planName: member.plan?.name || '',
-                amount: member.plan?.price || '', // Auto-fill price
-                billingStart: member.planStartDate ? member.planStartDate.split('T')[0] : '',
-                billingEnd: member.planEndDate ? member.planEndDate.split('T')[0] : '',
-                dueDate: member.planEndDate ? member.planEndDate.split('T')[0] : '', // Auto-set Due Date to Plan End Date
+                amount: member.plan?.price || '',
+                billingStart: billingStart,
+                billingEnd: billingEnd,
+                dueDate: dueDate,
+                notes: notes
             }));
             fetchMemberDetails(member.id);
+        }
+    };
+
+    const handlePlanChange = (e) => {
+        const planId = e.target.value;
+        const selectedPlan = plans.find(p => p.id === planId);
+
+        if (selectedPlan) {
+            // Determine start date: if renewal and old plan hasn't expired, use old end date. Else today.
+            // Note: If changing plans, logic remains same: extend from current validity or start fresh.
+            let start = formData.billingStart || new Date().toISOString().split('T')[0];
+
+            // Calculate new end date based on plan duration
+            const startDateObj = new Date(start);
+            const endDateObj = new Date(startDateObj);
+            endDateObj.setMonth(endDateObj.getMonth() + selectedPlan.duration);
+
+            const billingEnd = endDateObj.toISOString().split('T')[0];
+
+            setFormData(prev => ({
+                ...prev,
+                planId: selectedPlan.id,
+                planName: selectedPlan.name,
+                amount: selectedPlan.price,
+                billingEnd: billingEnd,
+                dueDate: billingEnd, // Due date usually matches end of service or immediate? Actually for prepaid it's immediate. 
+                // But logic in previous step set it to EndDate. Let's stick to that for consistency or revert to Today if immediate payment needed.
+                // Actually, standard invoice due date is typically "Upon Receipt" for gym. 
+                // But let's keep the existing logic: Due Date = Plan Expiry (unless overridden).
+                // Wait, logically Due Date for payment should be Today (or Billing Start). 
+                // Let's set Due Date to Today for new invoices, but keep the auto-fill logic user liked.
+            }));
+
+            // Trigger explicit recalculation if needed, or rely on useEffect
         }
     };
 
@@ -142,7 +233,16 @@ const CreateInvoice = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+            const newState = { ...prev, [name]: value };
+
+            // Auto-fill paid amount if status is set to PAID
+            if (name === 'paymentStatus' && value === 'PAID') {
+                newState.paidAmount = prev.totalAmount;
+            }
+
+            return newState;
+        });
     };
 
     const handlePrint = () => {
@@ -235,6 +335,7 @@ const CreateInvoice = () => {
                 invoiceNumber: formData.invoiceNumber,
                 dueDate: new Date(formData.dueDate || new Date()),
                 paymentStatus: formData.paymentMode === 'RAZORPAY' ? 'PENDING' : formData.paymentStatus,
+                paidAmount: formData.paymentMode === 'RAZORPAY' ? 0 : parseFloat(formData.paidAmount),
                 paymentMethod: formData.paymentMode, // RAZORPAY or CASH
                 razorpayPaymentId: formData.transactionId, // Store Transaction ID if manual
             };
@@ -283,7 +384,14 @@ const CreateInvoice = () => {
                             <Input label="Email" value={formData.memberEmail} readOnly />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <Input label="Plan" value={formData.planName} readOnly />
+                            <Select
+                                label="Plan"
+                                name="planId"
+                                value={formData.planId}
+                                onChange={handlePlanChange}
+                                options={plans.map(p => ({ value: p.id, label: `${p.name} - ₹${p.price}` }))}
+                                required
+                            />
                             <Input label="Trainer Name (Optional)" name="trainerName" value={formData.trainerName} onChange={handleChange} placeholder="Enter Name" />
                         </div>
                     </Card>

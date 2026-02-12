@@ -7,12 +7,16 @@ const DashboardLayout = ({ children }) => {
 
     return (
         <div className="min-h-screen bg-light-bg-primary dark:bg-dark-bg-primary">
-            <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            <div className="print:hidden">
+                <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            </div>
 
-            <div className="lg:pl-72">
-                <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+            <div className="lg:pl-72 print:pl-0">
+                <div className="print:hidden">
+                    <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+                </div>
 
-                <main className="p-6">
+                <main className="p-6 print:p-0">
                     {children}
                 </main>
             </div>

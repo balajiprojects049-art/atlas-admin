@@ -72,24 +72,18 @@ class EmailService {
             const path = require('path');
             const logoPath = path.join(__dirname, '../../client/public/gym_logo.png');
 
+            // Header Layout
             if (fs.existsSync(logoPath)) {
-                doc.image(logoPath, 50, 45, { width: 50 });
-                doc.moveDown();
-            }
+                doc.image(logoPath, 50, 45, { width: 80 });
 
-            doc.fontSize(20).font('Helvetica-Bold').text('ATLAS FITNESS', 110, 50); // Offset for logo
-            doc.fillColor('#dc2626').text(' ELITE', 270, 50); // Manual positioning or relative
-            // Actually let's keep it simple. If logo exists, text shifts.
-
-            // Re-do header layout
-            if (fs.existsSync(logoPath)) {
-                doc.fontSize(20).text('ATLAS FITNESS', 110, 50, { continued: true });
+                const textX = 140; // Shifted for larger logo
+                doc.fontSize(20).text('ATLAS FITNESS', textX, 50, { continued: true });
                 doc.fillColor('#dc2626').text(' ELITE');
-                doc.fillColor('black').fontSize(10).font('Helvetica').text('Premium Fitness Management', 110, 75);
-                doc.text('GSTIN: 36BNEPV0615C1ZA', 110, 90);
-                doc.text('3-4-98/4/204, New Narsina Nagar, Mallapur', 110, 105);
-                doc.text('Hyderabad, Telangana 500076', 110, 120);
-                doc.text('+91 99882 29441, +91 83175 29757', 110, 135);
+                doc.fillColor('black').fontSize(10).font('Helvetica').text('Premium Fitness Management', textX, 75);
+                doc.text('GSTIN: 36BNEPV0615C1ZA', textX, 90);
+                doc.text('3-4-98/4/204, New Narsina Nagar, Mallapur', textX, 105);
+                doc.text('Hyderabad, Telangana 500076', textX, 120);
+                doc.text('+91 99882 29441, +91 83175 29757', textX, 135);
             } else {
                 doc.fontSize(20).font('Helvetica-Bold').text('ATLAS FITNESS', { continued: true });
                 doc.fillColor('#dc2626').text(' ELITE');

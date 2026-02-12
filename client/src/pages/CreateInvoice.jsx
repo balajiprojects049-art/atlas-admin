@@ -518,9 +518,8 @@ const CreateInvoice = () => {
                         {/* Header */}
                         <div className="flex justify-between items-start border-b pb-6 mb-6">
                             <div>
-                                <img src="/gym_logo.png" alt="Logo" className="w-20 h-20 object-contain mb-4" />
-                                <h1 className="text-3xl font-bold text-indigo-800 uppercase tracking-wide">Invoiced</h1>
-                                <p className="font-semibold text-lg mt-1">Atlas Fitness Elite</p>
+                                <img src="/gym_logo.png" alt="Logo" className="w-40 h-auto object-contain mb-2" />
+                                <h1 className="text-3xl font-bold text-indigo-800 uppercase tracking-wide">Atlas Fitness Elite</h1>
                                 <p className="text-gray-500">3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
                                 <p className="text-gray-500">+91 99882 29441, +91 83175 29757 | info@atlasfitness.com</p>
                                 <p className="text-gray-500 font-medium">GSTIN: 36BNEPV0615C1ZA</p>

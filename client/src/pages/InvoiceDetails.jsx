@@ -107,7 +107,7 @@ const InvoiceDetails = () => {
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
                     <div>
-                        <img src="/gym_logo.png" alt="Atlas Fitness" className="w-24 h-24 object-contain mb-4" />
+                        <img src="/gym_logo.png" alt="Atlas Fitness" className="w-40 h-auto object-contain mb-2" />
                         <h1 className="text-4xl font-black tracking-tighter uppercase">
                             <span className="text-black">Atlas Fitness</span>
                             <span className="text-red-600 ml-2">Elite</span>

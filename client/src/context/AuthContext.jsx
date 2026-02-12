@@ -15,7 +15,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(sessionStorage.getItem('token'));
 
     // Configure axios defaults
     useEffect(() => {
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
             const { token, user } = response.data;
 
-            localStorage.setItem('token', token);
+            sessionStorage.setItem('token', token);
             setToken(token);
             setUser(user);
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         setToken(null);
         setUser(null);
         delete api.defaults.headers.common['Authorization'];

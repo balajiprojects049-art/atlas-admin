@@ -1,9 +1,10 @@
 /**
- * Vercel Serverless Function Entry Point
- * This wraps the Express app for serverless deployment
+ * Vercel Serverless Entry Point
+ * 
+ * This file wraps the Express app from server/app.js
+ * and exports it for Vercel Serverless Functions.
  */
+const app = require('../server/app.js');
 
-const app = require('../server/server');
-
-// Export the Express app as a serverless function
+// Vercel expects (req, res) handler or Express app
 module.exports = app;

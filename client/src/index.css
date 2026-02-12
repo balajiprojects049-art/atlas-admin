@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-dark-bg-secondary dark:bg-dark-bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-dark-text-muted rounded-lg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-text-secondary;
+}
+
+/* Dark mode root */
+.dark {
+    @apply bg-dark-bg-primary text-dark-text-primary;
+}
+
+/* Light mode root */
+.light {
+    @apply bg-light-bg-primary text-light-text-primary;
+}
+
+/* Custom Utilities */
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .glass-effect {
+        @apply backdrop-blur-md bg-opacity-80;
+    }
+
+    .card-shadow {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-shadow-hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* Component Styles */
+@layer components {
+    .btn-primary {
+        @apply px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-secondary {
+        @apply px-4 py-2 bg-dark-bg-accent dark:bg-dark-bg-accent text-dark-text-primary dark:text-dark-text-primary hover:bg-dark-bg-hover rounded-lg font-medium transition-all duration-200;
+    }
+
+    .input-field {
+        @apply w-full px-4 py-2.5 bg-light-bg-secondary dark:bg-dark-bg-secondary text-light-text-primary dark:text-dark-text-primary border border-light-bg-accent dark:border-dark-bg-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-200;
+    }
+
+    .card {
+        @apply bg-light-bg-secondary dark:bg-dark-bg-secondary rounded-xl p-6 card-shadow hover:card-shadow-hover transition-all duration-200;
+    }
+
+    .badge {
+        @apply px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1;
+    }
+
+    .badge-success {
+        @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+    }
+
+    .badge-warning {
+        @apply bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400;
+    }
+
+    .badge-danger {
+        @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+    }
+
+    .badge-info {
+        @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400;
+    }
+}
+
+/* Animation delays for staggered effects */
+.delay-100 {
+    animation-delay: 100ms;
+}
+
+.delay-200 {
+    animation-delay: 200ms;
+}
+
+.delay-300 {
+    animation-delay: 300ms;
+}
+
+.delay-400 {
+    animation-delay: 400ms;
+}

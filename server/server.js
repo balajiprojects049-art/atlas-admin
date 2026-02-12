@@ -1,0 +1,48 @@
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const prisma = require('./config/db');
+
+dotenv.config();
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Test database connection
+prisma.$connect()
+    .then(() => console.log('✅ Neon DB (PostgreSQL) Connected Successfully'))
+    .catch((err) => console.error('❌ Database Connection Error:', err));
+
+// Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/members', require('./routes/member.routes'));
+app.use('/api/invoices', require('./routes/invoice.routes'));
+app.use('/api/payments', require('./routes/payment.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
+app.use('/api/settings', require('./routes/settings.routes'));
+
+// Health Check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', message: 'Gym Billing API is running' });
+});
+
+// Error Handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        success: false,
+        message: err.message || 'Server Error',
+    });
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+
+module.exports = app;

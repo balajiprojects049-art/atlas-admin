@@ -1,0 +1,139 @@
+// Prisma Schema for Gym Billing System
+// Database: Neon DB (PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model - For authentication and authorization
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Plan Model - Membership plans
+model Plan {
+  id          String    @id @default(uuid())
+  name        String
+  duration    Int       // in months
+  price       Float
+  gstRate     Float     @default(18) // 18% GST
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  members     Member[]
+  invoices    Invoice[]
+
+  @@map("plans")
+}
+
+// Member Model - Gym members
+model Member {
+  id             String    @id @default(uuid())
+  memberId       String    @unique // MEM-XXXX format
+  name           String
+  email          String
+  phone          String
+  gender         Gender?
+  dob            DateTime?
+  address        String?
+  photo          String?
+  planId         String?
+  planStartDate  DateTime?
+  planEndDate    DateTime?
+  status         MemberStatus @default(ACTIVE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  plan           Plan?     @relation(fields: [planId], references: [id])
+  invoices       Invoice[]
+
+  @@map("members")
+}
+
+// Invoice Model - Billing and invoices
+model Invoice {
+  id                 String        @id @default(uuid())
+  invoiceNumber      String        @unique // INV-YYYY-NNNN format
+  memberId           String
+  planId             String
+  amount             Float
+  gstAmount          Float?
+  cgst               Float?
+  sgst               Float?
+  lateFee            Float         @default(0)
+  totalAmount        Float
+  paymentStatus      PaymentStatus @default(PENDING)
+  dueDate            DateTime
+  paidDate           DateTime?
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  paymentMethod      String?       // UPI, Card, NetBanking, Cash
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  
+  member             Member        @relation(fields: [memberId], references: [id])
+  plan               Plan          @relation(fields: [planId], references: [id])
+
+  @@map("invoices")
+}
+
+// Settings Model - Gym configuration
+model Settings {
+  id                  String   @id @default(uuid())
+  gymName             String
+  gstNumber           String?
+  address             String?
+  phone               String?
+  email               String?
+  emailNotifications  Boolean  @default(true)
+  razorpayKeyId       String?
+  razorpayKeySecret   String?
+  smtpHost            String?
+  smtpPort            Int?
+  smtpUser            String?
+  smtpPass            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  STAFF
+  TRAINER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MemberStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  OVERDUE
+}

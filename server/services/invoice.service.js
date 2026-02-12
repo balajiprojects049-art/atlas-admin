@@ -63,7 +63,11 @@ class InvoiceService {
 
             if (newInvoice.member?.email) {
                 console.log(`📧 Invoice ${newInvoice.invoiceNumber} created as PAID. Sending receipt to ${newInvoice.member.email}`);
-                emailService.sendInvoiceEmail(newInvoice).catch(err => console.error('Invoice email error:', err));
+                try {
+                    await emailService.sendInvoiceEmail(newInvoice);
+                } catch (err) {
+                    console.error('Invoice email error:', err);
+                }
             }
         }
 
@@ -213,7 +217,11 @@ class InvoiceService {
 
             if (updatedInvoice.member?.email) {
                 console.log(`📧 Invoice ${updatedInvoice.invoiceNumber} paid. Sending receipt to ${updatedInvoice.member.email}`);
-                emailService.sendInvoiceEmail(updatedInvoice).catch(err => console.error('Invoice email error:', err));
+                try {
+                    await emailService.sendInvoiceEmail(updatedInvoice);
+                } catch (err) {
+                    console.error('Invoice email error:', err);
+                }
             }
         }
 
@@ -252,7 +260,11 @@ class InvoiceService {
         // Send Payment Receipt Email
         if (paidInvoice.member?.email) {
             console.log(`📧 Invoice ${paidInvoice.invoiceNumber} marked paid. Sending receipt to ${paidInvoice.member.email}`);
-            emailService.sendInvoiceEmail(paidInvoice).catch(err => console.error('Invoice email error:', err));
+            try {
+                await emailService.sendInvoiceEmail(paidInvoice);
+            } catch (err) {
+                console.error('Invoice email error:', err);
+            }
         }
 
         return paidInvoice;

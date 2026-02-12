@@ -77,7 +77,11 @@ class MemberService {
 
         // Send Welcome Email
         console.log(`📧 Triggering welcome email for: ${newMember.email}`);
-        emailService.sendWelcomeEmail(newMember).catch(err => console.error('Email error:', err));
+        try {
+            await emailService.sendWelcomeEmail(newMember);
+        } catch (err) {
+            console.error('Email error:', err);
+        }
 
         return newMember;
     }

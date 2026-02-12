@@ -51,24 +51,29 @@ const EditMember = () => {
         try {
             setFetching(true);
             const response = await memberAPI.getById(id);
-            const member = response.data;
+            if (response.data.success && response.data.member) {
+                const member = response.data.member;
 
-            setFormData({
-                name: member.name || '',
-                email: member.email || '',
-                phone: member.phone || '',
-                gender: member.gender || '',
-                dob: member.dob ? member.dob.split('T')[0] : '',
-                address: member.address || '',
-                planName: member.plan?.name || '',
-                planDuration: member.plan?.duration || '',
-                planAmount: member.plan?.price || '',
-                startDate: member.planStartDate ? member.planStartDate.split('T')[0] : '',
-                status: member.status || 'ACTIVE',
-                height: member.height || '',
-                weight: member.weight || '',
-                workoutType: member.workoutType || ''
-            });
+                setFormData({
+                    name: member.name || '',
+                    email: member.email || '',
+                    phone: member.phone || '',
+                    gender: member.gender || '',
+                    dob: member.dob ? member.dob.split('T')[0] : '',
+                    address: member.address || '',
+                    planName: member.plan?.name || '',
+                    planDuration: member.plan?.duration || '',
+                    planAmount: member.plan?.price || '',
+                    startDate: member.planStartDate ? member.planStartDate.split('T')[0] : '',
+                    status: member.status || 'ACTIVE',
+                    height: member.height || '',
+                    weight: member.weight || '',
+                    workoutType: member.workoutType || ''
+                });
+            } else {
+                toast.error('Member not found');
+                navigate('/members');
+            }
         } catch (error) {
             console.error('Error fetching member:', error);
             toast.error('Failed to load member details');

@@ -103,4 +103,33 @@ router.post('/logout', (req, res) => {
     });
 });
 
+// Change Password
+router.post('/change-password', authMiddleware, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'All fields are required' });
+        }
+
+        const user = await userService.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const isMatch = await userService.comparePassword(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        await userService.updateUser(userId, { password: newPassword });
+
+        res.json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update password' });
+    }
+});
+
 module.exports = router;

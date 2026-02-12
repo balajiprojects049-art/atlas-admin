@@ -3,6 +3,7 @@ import { Input, TextArea } from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import toast from 'react-hot-toast';
+import { authAPI } from '../services/api';
 
 const Settings = () => {
     const [gymSettings, setGymSettings] = useState({
@@ -25,6 +26,12 @@ const Settings = () => {
         keySecret: '',
     });
 
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
     const [emailNotifications, setEmailNotifications] = useState(true);
 
     const handleSaveGymSettings = () => {
@@ -37,6 +44,38 @@ const Settings = () => {
 
     const handleSaveRazorpaySettings = () => {
         toast.success('Razorpay settings saved successfully!');
+    };
+
+    const handleChangePassword = async () => {
+        if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+            toast.error('Please fill all password fields');
+            return;
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error('New passwords do not match');
+            return;
+        }
+
+        if (passwordData.newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+
+        try {
+            const response = await authAPI.changePassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            });
+
+            if (response.data.success) {
+                toast.success('Password changed successfully');
+                setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            }
+        } catch (error) {
+            console.error('Change password error:', error);
+            toast.error(error.response?.data?.message || 'Failed to change password');
+        }
     };
 
     return (
@@ -169,6 +208,44 @@ const Settings = () => {
                     </p>
                     <Button onClick={handleSaveRazorpaySettings}>
                         Save Razorpay Settings
+                    </Button>
+                </div>
+            </Card>
+
+            {/* Security Settings */}
+            <Card>
+                <h2 className="text-xl font-semibold text-light-text-primary dark:text-dark-text-primary mb-4">
+                    Security Settings
+                </h2>
+                <div className="space-y-4">
+                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-2">
+                        Change your admin password
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input
+                            label="Current Password"
+                            type="password"
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            placeholder="Current Password"
+                        />
+                        <Input
+                            label="New Password"
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            placeholder="New Password"
+                        />
+                        <Input
+                            label="Confirm New Password"
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            placeholder="Confirm New Password"
+                        />
+                    </div>
+                    <Button onClick={handleChangePassword} className="bg-red-600 hover:bg-red-700 text-white">
+                        Change Password
                     </Button>
                 </div>
             </Card>

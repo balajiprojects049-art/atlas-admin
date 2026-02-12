@@ -74,9 +74,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
                 {/* Logo/Brand */}
                 <div className="p-6 border-b border-light-bg-accent dark:border-dark-bg-accent">
-                    <h1 className="text-2xl font-bold text-accent">Atlas Fitness Elite</h1>
-                    <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-1">
-                        Billing & Management
+                    <h1 className="text-lg font-black uppercase tracking-tighter leading-tight whitespace-nowrap">
+                        <span className="text-light-text-primary dark:text-dark-text-primary">Atlas Fitness</span>
+                        <span className="text-red-600 ml-1.5">Elite</span>
+                    </h1>
+                    <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-light-text-muted dark:text-dark-text-muted mt-2 opacity-50">
+                        Management System
                     </p>
                 </div>
 

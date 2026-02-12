@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const emailService = require('./email.service');
 
 class InvoiceService {
     // Generate unique invoice number (INV-YYYY-NNNN format)
@@ -39,7 +40,7 @@ class InvoiceService {
         const sgst = gstAmount / 2;
         const totalAmount = data.amount + gstAmount + (data.lateFee || 0);
 
-        return await prisma.invoice.create({
+        const newInvoice = await prisma.invoice.create({
             data: {
                 ...invoiceData,
                 invoiceNumber,
@@ -55,6 +56,14 @@ class InvoiceService {
                 plan: true,
             },
         });
+
+        // If created as PAID immediately, send email
+        if (newInvoice.paymentStatus === 'PAID' && newInvoice.member?.email) {
+            console.log(`📧 Invoice ${newInvoice.invoiceNumber} created as PAID. Sending receipt to ${newInvoice.member.email}`);
+            emailService.sendInvoiceEmail(newInvoice).catch(err => console.error('Invoice email error:', err));
+        }
+
+        return newInvoice;
     }
 
     // Get all invoices with pagination and filters
@@ -141,7 +150,7 @@ class InvoiceService {
             }
         });
 
-        return await prisma.invoice.update({
+        const updatedInvoice = await prisma.invoice.update({
             where: { id },
             data: prismaData,
             include: {
@@ -149,6 +158,14 @@ class InvoiceService {
                 plan: true,
             },
         });
+
+        // If updated to PAID, send email
+        if (updatedInvoice.paymentStatus === 'PAID' && updatedInvoice.member?.email) {
+            console.log(`📧 Invoice ${updatedInvoice.invoiceNumber} paid. Sending receipt to ${updatedInvoice.member.email}`);
+            emailService.sendInvoiceEmail(updatedInvoice).catch(err => console.error('Invoice email error:', err));
+        }
+
+        return updatedInvoice;
     }
 
     // Delete invoice
@@ -163,7 +180,7 @@ class InvoiceService {
         const invoice = await prisma.invoice.findUnique({ where: { id } });
         if (!invoice) return null;
 
-        return await prisma.invoice.update({
+        const paidInvoice = await prisma.invoice.update({
             where: { id },
             data: {
                 paymentStatus: 'PAID',
@@ -176,6 +193,14 @@ class InvoiceService {
                 plan: true,
             },
         });
+
+        // Send Payment Receipt Email
+        if (paidInvoice.member?.email) {
+            console.log(`📧 Invoice ${paidInvoice.invoiceNumber} marked paid. Sending receipt to ${paidInvoice.member.email}`);
+            emailService.sendInvoiceEmail(paidInvoice).catch(err => console.error('Invoice email error:', err));
+        }
+
+        return paidInvoice;
     }
 
     // Get overdue invoices

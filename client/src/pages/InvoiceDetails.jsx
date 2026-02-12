@@ -73,8 +73,11 @@ const InvoiceDetails = () => {
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
                     <div>
-                        <h1 className="text-4xl font-bold text-indigo-700 tracking-wide uppercase">INVOICED</h1>
-                        <h2 className="text-lg font-semibold mt-2">Atlas Fitness Services IT</h2>
+                        <h1 className="text-4xl font-black tracking-tighter uppercase">
+                            <span className="text-black">Atlas Fitness</span>
+                            <span className="text-red-600 ml-2">Elite</span>
+                        </h1>
+                        <h2 className="text-lg font-semibold mt-2 text-gray-700 italic">Premium Fitness Management</h2>
                         <div className="text-sm text-gray-500 mt-1">
                             <p>123 Gym Street, Fitness City</p>
                             <p>+91 98765 43210 | info@atlasfitness.com</p>
@@ -95,7 +98,7 @@ const InvoiceDetails = () => {
                             <div className="flex justify-between gap-4 mt-1">
                                 <span className="text-gray-600">Status:</span>
                                 <span className={`font-medium px-2 py-0.5 rounded text-xs uppercase ${invoice.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                                        invoice.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                                    invoice.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                                     }`}>
                                     {invoice.paymentStatus}
                                 </span>
@@ -109,7 +112,7 @@ const InvoiceDetails = () => {
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">BILL TO:</h3>
                     <div className="text-gray-800">
                         <p className="text-xl font-bold">{invoice.member?.name || 'Unknown Member'}</p>
-                        <p className="text-sm text-gray-500">{invoice.memberId}</p>
+                        <p className="text-sm font-semibold text-red-600">{invoice.member?.memberId || invoice.memberId}</p>
                         <p className="text-sm text-gray-500">{invoice.member?.phone}</p>
                         <p className="text-sm text-gray-500">{invoice.member?.email}</p>
                     </div>
@@ -158,9 +161,9 @@ const InvoiceDetails = () => {
                                 <span>{formatCurrency(invoice.lateFee)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-lg font-bold text-indigo-700 pt-3 border-t border-gray-200">
-                            <span>Total Payable:</span>
-                            <span>{formatCurrency(invoice.totalAmount)}</span>
+                        <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
+                            <span className="text-black">Total Payable:</span>
+                            <span className="text-red-700">{formatCurrency(invoice.totalAmount)}</span>
                         </div>
                         {invoice.paymentStatus === 'PAID' && (
                             <div className="flex justify-between text-sm text-green-600 font-medium">

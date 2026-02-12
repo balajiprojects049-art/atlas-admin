@@ -106,6 +106,7 @@ const CreateInvoice = () => {
                 amount: member.plan?.price || '', // Auto-fill price
                 billingStart: member.planStartDate ? member.planStartDate.split('T')[0] : '',
                 billingEnd: member.planEndDate ? member.planEndDate.split('T')[0] : '',
+                dueDate: member.planEndDate ? member.planEndDate.split('T')[0] : '', // Auto-set Due Date to Plan End Date
             }));
             fetchMemberDetails(member.id);
         }

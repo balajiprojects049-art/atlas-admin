@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const emailService = require('./email.service');
 
 class MemberService {
     // Generate unique member ID (MEM-XXXX format)
@@ -49,7 +50,7 @@ class MemberService {
             dob = new Date(data.dob);
         }
 
-        return await prisma.member.create({
+        const newMember = await prisma.member.create({
             data: {
                 memberId,
                 name: data.name,
@@ -72,6 +73,12 @@ class MemberService {
                 plan: true,
             },
         });
+
+        // Send Welcome Email
+        console.log(`📧 Triggering welcome email for: ${newMember.email}`);
+        emailService.sendWelcomeEmail(newMember).catch(err => console.error('Email error:', err));
+
+        return newMember;
     }
 
     // Get all members with pagination and filters

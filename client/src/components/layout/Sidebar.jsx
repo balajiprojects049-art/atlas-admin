@@ -74,8 +74,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
                 {/* Logo/Brand */}
                 {/* Logo/Brand */}
-                <div className="p-6 border-b border-light-bg-accent dark:border-dark-bg-accent flex items-center gap-3">
-                    <img src="/gym_logo.png" alt="Atlas Fitness Logo" className="w-12 h-12 object-contain" />
+                <div className="p-6 border-b border-light-bg-accent dark:border-dark-bg-accent flex flex-col items-center gap-2 text-center">
+                    <img src="/gym_logo.png" alt="Atlas Fitness Logo" className="w-16 h-16 object-contain mb-1" />
                     <div>
                         <h1 className="text-lg font-black uppercase tracking-tighter leading-tight whitespace-nowrap">
                             <span className="text-light-text-primary dark:text-dark-text-primary">Atlas Fitness</span>

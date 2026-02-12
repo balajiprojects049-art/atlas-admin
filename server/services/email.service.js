@@ -5,37 +5,57 @@ const PDFDocument = require('pdfkit');
 
 class EmailService {
     async getTransporter() {
-        // ... (existing getTransporter code) ...
+        try {
+            const settings = await prisma.settings.findFirst();
+
+            // 1. Try DB Settings
+            if (settings && settings.smtpHost && settings.smtpUser && settings.smtpPass) {
+                console.log('📬 Email: Using Database SMTP Settings');
+                const port = parseInt(settings.smtpPort) || 587;
+                return nodemailer.createTransport({
+                    host: settings.smtpHost,
+                    port: port,
+                    secure: port === 465, // True for 465, false for other ports
+                    auth: {
+                        user: settings.smtpUser,
+                        pass: settings.smtpPass,
+                    },
+                });
+            }
+
+            // 2. Try Environment Variables
+            if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+                console.log('📬 Email: Using Environment Variables');
+                const port = parseInt(process.env.SMTP_PORT) || 587;
+                return nodemailer.createTransport({
+                    host: process.env.SMTP_HOST,
+                    port: port,
+                    secure: port === 465,
+                    auth: {
+                        user: process.env.SMTP_USER,
+                        pass: process.env.SMTP_PASS,
+                    },
+                });
+            }
+
+            console.error('❌ Email Error: No SMTP configuration found in DB or ENV.');
+            console.log('Debug Env:', {
+                HOST: !!process.env.SMTP_HOST,
+                USER: !!process.env.SMTP_USER,
+                PASS: !!process.env.SMTP_PASS
+            });
+            return null;
+        } catch (error) {
+            console.error('❌ Email Config Error:', error);
+            return null;
+        }
+    }
+
+    async getSender() {
+        // Helper to get the correct 'from' address
         const settings = await prisma.settings.findFirst();
-
-        if (settings && settings.smtpHost && settings.smtpUser && settings.smtpPass) {
-            console.log('📬 Using SMTP settings from Database');
-            return nodemailer.createTransport({
-                host: settings.smtpHost,
-                port: settings.smtpPort || 587,
-                secure: settings.smtpPort === 465,
-                auth: {
-                    user: settings.smtpUser,
-                    pass: settings.smtpPass,
-                },
-            });
-        }
-
-        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-            console.log('📬 Using SMTP settings from Environment Variables');
-            return nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: process.env.SMTP_PORT || 587,
-                secure: process.env.SMTP_PORT === 465,
-                auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS,
-                },
-            });
-        }
-
-        console.error('❌ No SMTP settings found in DB or .env');
-        return null;
+        if (settings && settings.smtpUser) return settings.smtpUser;
+        return process.env.SMTP_USER || 'noreply@atlasfitness.com';
     }
 
     generateInvoicePDF(invoice, gymName) {
@@ -124,17 +144,16 @@ class EmailService {
     }
 
     async sendWelcomeEmail(member) {
-        // ... (existing welcome email code) ...
-        // Ensure this method remains intact
         try {
             const transporter = await this.getTransporter();
             if (!transporter) return;
 
+            const sender = await this.getSender();
             const settings = await prisma.settings.findFirst();
             const gymName = settings?.gymName || 'Atlas Fitness Elite';
 
             const mailOptions = {
-                from: `"Atlas Fitness Elite" <atlasfitnessservices122@gmail.com>`,
+                from: `"Atlas Fitness Elite" <${sender}>`,
                 to: member.email,
                 subject: `Welcome to Atlas Fitness Elite, ${member.name}!`,
                 html: `
@@ -201,6 +220,7 @@ class EmailService {
             const transporter = await this.getTransporter();
             if (!transporter) return;
 
+            const sender = await this.getSender();
             const settings = await prisma.settings.findFirst();
             const gymName = settings?.gymName || 'Atlas Fitness Elite';
 
@@ -208,7 +228,7 @@ class EmailService {
             const pdfBuffer = await this.generateInvoicePDF(invoice, gymName);
 
             const mailOptions = {
-                from: `"Atlas Fitness Elite" <atlasfitnessservices122@gmail.com>`,
+                from: `"Atlas Fitness Elite" <${sender}>`,
                 to: invoice.member.email,
                 subject: `Payment Receipt - ${invoice.invoiceNumber} | ${gymName}`,
                 html: `
@@ -280,11 +300,12 @@ class EmailService {
             const transporter = await this.getTransporter();
             if (!transporter) return;
 
+            const sender = await this.getSender();
             const settings = await prisma.settings.findFirst();
             const gymName = settings?.gymName || 'Atlas Fitness Elite';
 
             const mailOptions = {
-                from: `"Atlas Fitness Elite" <atlasfitnessservices122@gmail.com>`,
+                from: `"Atlas Fitness Elite" <${sender}>`,
                 to: member.email,
                 subject: `⚠️ Membership Expiring in ${daysLeft} Days | ${gymName}`,
                 html: `

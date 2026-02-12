@@ -107,6 +107,7 @@ const InvoiceDetails = () => {
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
                     <div>
+                        <img src="/gym_logo.png" alt="Atlas Fitness" className="w-24 h-24 object-contain mb-4" />
                         <h1 className="text-4xl font-black tracking-tighter uppercase">
                             <span className="text-black">Atlas Fitness</span>
                             <span className="text-red-600 ml-2">Elite</span>
@@ -180,7 +181,17 @@ const InvoiceDetails = () => {
                 <div className="flex justify-end mb-12">
                     <div className="w-64 space-y-3">
                         <div className="flex justify-between text-sm text-gray-600">
-                            <span>Subtotal:</span>
+                            <span>Plan Price:</span>
+                            <span>{formatCurrency(invoice.discountType === 'PERCENTAGE' ? (invoice.amount / (1 - (invoice.discount / 100))) : (invoice.amount + (invoice.discount || 0)))}</span>
+                        </div>
+                        {invoice.discount > 0 && (
+                            <div className="flex justify-between text-sm text-green-600">
+                                <span>Discount {invoice.discountType === 'PERCENTAGE' && `(${invoice.discount}%)`}:</span>
+                                <span>- {formatCurrency(invoice.discountType === 'PERCENTAGE' ? ((invoice.amount / (1 - (invoice.discount / 100))) * invoice.discount / 100) : invoice.discount)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between text-sm text-gray-800 font-medium pt-2 border-t border-dashed border-gray-200">
+                            <span>Taxable Value:</span>
                             <span>{formatCurrency(invoice.amount)}</span>
                         </div>
                         {invoice.gstAmount > 0 && (

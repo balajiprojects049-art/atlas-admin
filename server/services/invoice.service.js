@@ -192,7 +192,7 @@ class InvoiceService {
         const validFields = [
             'amount', 'gstAmount', 'cgst', 'sgst', 'lateFee', 'totalAmount',
             'paidAmount', 'paymentStatus', 'dueDate', 'paidDate', 'razorpayOrderId',
-            'razorpayPaymentId', 'paymentMethod'
+            'razorpayPaymentId', 'paymentMethod', 'discount', 'discountType'
         ];
 
         const prismaData = {};

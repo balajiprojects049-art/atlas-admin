@@ -98,7 +98,7 @@ export const invoiceAPI = {
     create: (data) => api.post('/invoices', data),
     update: (id, data) => api.put(`/invoices/${id}`, data),
     delete: (id) => api.delete(`/invoices/${id}`),
-    download: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
+    downloadPDF: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
 };
 
 export const paymentAPI = {

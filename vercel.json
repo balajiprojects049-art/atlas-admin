@@ -1,20 +1,23 @@
 {
+    "version": 2,
     "buildCommand": "cd client && npm install && npm run build",
-    "outputDirectory": "client/dist",
-    "framework": null,
-    "functions": {
-        "server/server.js": {
-            "runtime": "nodejs20.x"
+    "installCommand": "cd server && npm install",
+    "builds": [
+        {
+            "src": "server/server.js",
+            "use": "@vercel/node"
         }
-    },
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
             "destination": "/server/server.js"
-        },
+        }
+    ],
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/client/dist/$1"
         }
     ]
 }

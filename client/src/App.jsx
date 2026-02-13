@@ -22,6 +22,7 @@ import EditCafeteriaProduct from './pages/EditCafeteriaProduct';
 import CafeteriaOrders from './pages/CafeteriaOrdersSimple';
 import CreateCafeteriaOrder from './pages/CreateCafeteriaOrder';
 import CafeteriaOrderDetails from './pages/CafeteriaOrderDetails';
+import HomePage from './pages/HomePage';
 import './index.css';
 
 // Protected Route Component
@@ -200,8 +201,8 @@ function AppRoutes() {
                     </ProtectedRoute>
                 }
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 }

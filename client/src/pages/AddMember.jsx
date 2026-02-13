@@ -41,6 +41,7 @@ const AddMember = () => {
         { name: '15 Months', duration: 15, price: 34999 },
         { name: '18 Months', duration: 18, price: 39999 },
         { name: '24 Months', duration: 24, price: 55999 },
+        { name: 'Custom Plan', duration: '', price: '' },
     ];
 
     const handleChange = (e) => {
@@ -62,12 +63,22 @@ const AddMember = () => {
         if (name === 'planName') {
             const selectedPlan = gymPlans.find(plan => plan.name === value);
             if (selectedPlan) {
-                setFormData(prev => ({
-                    ...prev,
-                    [name]: value,
-                    planAmount: selectedPlan.price.toString(),
-                    planDuration: selectedPlan.duration.toString()
-                }));
+                if (value === 'Custom Plan') {
+                    // Reset or keep empty for manual entry
+                    setFormData(prev => ({
+                        ...prev,
+                        [name]: value,
+                        planAmount: '',
+                        planDuration: ''
+                    }));
+                } else {
+                    setFormData(prev => ({
+                        ...prev,
+                        [name]: value,
+                        planAmount: selectedPlan.price.toString(),
+                        planDuration: selectedPlan.duration.toString()
+                    }));
+                }
             }
         }
     };
@@ -279,8 +290,9 @@ const AddMember = () => {
                             type="number"
                             value={formData.planDuration}
                             onChange={handleChange}
-                            disabled
-                            placeholder="Auto-filled"
+                            disabled={formData.planName !== 'Custom Plan'}
+                            placeholder={formData.planName === 'Custom Plan' ? 'Enter Months' : 'Auto-filled'}
+                            required
                         />
                         <Input
                             label="Plan Amount (₹)"
@@ -288,6 +300,7 @@ const AddMember = () => {
                             type="number"
                             value={formData.planAmount}
                             onChange={handleChange}
+                            disabled={formData.planName !== 'Custom Plan'}
                             required
                             placeholder="0.00"
                         />

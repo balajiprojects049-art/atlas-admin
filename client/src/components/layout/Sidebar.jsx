@@ -83,8 +83,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     <img src="/gym_logo.png" alt="Atlas Fitness Logo" className="w-24 h-auto object-contain mb-1" />
                     <div>
                         <h1 className="text-lg font-black uppercase tracking-tighter leading-tight whitespace-nowrap">
-                            <span className="text-light-text-primary dark:text-dark-text-primary">Atlas Fitness</span>
-                            <span className="text-red-600 ml-1.5">Elite</span>
+                            <span className="text-light-text-primary dark:text-dark-text-primary flex items-center justify-center gap-2">
+                                <span>Atlas</span>
+                                <span>Fitness</span>
+                            </span>
                         </h1>
                         <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-light-text-muted dark:text-dark-text-muted mt-0.5 opacity-50">
                             Management System
@@ -114,8 +116,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                                             src={item.icon}
                                             alt={item.name}
                                             className={`w-6 h-6 object-contain transition-all duration-200 ${isActive
-                                                    ? 'brightness-0 invert'
-                                                    : 'dark:brightness-0 dark:invert opacity-70 hover:opacity-100'
+                                                ? 'brightness-0 invert'
+                                                : 'dark:brightness-0 dark:invert opacity-70 hover:opacity-100'
                                                 }`}
                                         />
                                         <span className="font-medium">{item.name}</span>

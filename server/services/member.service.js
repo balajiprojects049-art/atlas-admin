@@ -33,7 +33,10 @@ class MemberService {
             });
             if (plan) {
                 planId = plan.id;
-                duration = plan.duration;
+                // Only overwrite duration if NOT Custom Plan
+                if (plan.name !== 'Custom Plan') {
+                    duration = plan.duration;
+                }
             }
         }
 

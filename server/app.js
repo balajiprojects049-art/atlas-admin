@@ -6,9 +6,22 @@ const prisma = require('./config/db');
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(require('helmet')()); // Secure HTTP headers
+const rateLimit = require('express-rate-limit');
+
+// Rate Limiting: 100 requests per 15 minutes
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(limiter);
+
+app.use(cors()); // Configure CORS options as needed for production
+app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database connection handling for Serverless

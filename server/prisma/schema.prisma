@@ -144,3 +144,66 @@ enum PaymentStatus {
   OVERDUE
   PARTIAL
 }
+
+// Cafeteria Models
+model CafeteriaProduct {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  category    String    // Beverages, Snacks, Meals, Supplements, Others
+  price       Float
+  gstRate     Float     @default(18) // 18% GST
+  images      String[]  // Array of image URLs
+  stock       Int       @default(0)
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orderItems  CafeteriaOrderItem[]
+
+  @@map("cafeteria_products")
+}
+
+model CafeteriaOrder {
+  id                 String        @id @default(uuid())
+  orderNumber        String        @unique // CAF-YYYY-NNNN format
+  customerId         String?       // Optional: can link to member
+  customerName       String
+  customerPhone      String
+  subtotal           Float
+  gstAmount          Float
+  cgst               Float
+  sgst               Float
+  totalAmount        Float
+  paidAmount         Float         @default(0)
+  paymentStatus      PaymentStatus @default(PENDING)
+  paymentMethod      String?       // UPI, Card, NetBanking, Cash
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  discount           Float         @default(0)
+  discountType       String?       // PERCENTAGE or AMOUNT
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  items              CafeteriaOrderItem[]
+
+  @@map("cafeteria_orders")
+}
+
+model CafeteriaOrderItem {
+  id          String    @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String    // Store product name at time of order
+  quantity    Int
+  price       Float     // Price at time of order
+  gstRate     Float     // GST rate at time of order
+  amount      Float     // Total amount for this item
+  createdAt   DateTime  @default(now())
+
+  order       CafeteriaOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     CafeteriaProduct  @relation(fields: [productId], references: [id])
+
+  @@map("cafeteria_order_items")
+}
+

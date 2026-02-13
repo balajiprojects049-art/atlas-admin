@@ -27,6 +27,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             allowedRoles: ['admin', 'staff'],
         },
         {
+            name: 'Cafeteria',
+            path: '/cafeteria/products',
+            icon: '',
+            allowedRoles: ['admin', 'staff'],
+        },
+        {
             name: 'Reports',
             path: '/reports',
             icon: '📈',

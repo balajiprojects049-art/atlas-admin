@@ -1,0 +1,370 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { getProductById, updateProduct } from '../services/cafeteriaService';
+
+const EditCafeteriaProduct = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [existingImages, setExistingImages] = useState([]);
+    const [newImages, setNewImages] = useState([]);
+    const [newImagePreviews, setNewImagePreviews] = useState([]);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        category: 'Beverages',
+        price: '',
+        gstRate: '18',
+        stock: '0',
+        isAvailable: true
+    });
+
+    const categories = ['Beverages', 'Snacks', 'Meals', 'Supplements', 'Others'];
+
+    useEffect(() => {
+        fetchProduct();
+    }, [id]);
+
+    const fetchProduct = async () => {
+        try {
+            setLoading(true);
+            const product = await getProductById(id);
+            setFormData({
+                name: product.name,
+                description: product.description || '',
+                category: product.category,
+                price: product.price.toString(),
+                gstRate: product.gstRate.toString(),
+                stock: product.stock.toString(),
+                isAvailable: product.isAvailable
+            });
+            setExistingImages(product.images || []);
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            toast.error('Failed to fetch product details');
+            navigate('/cafeteria/products');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleNewImageChange = (e) => {
+        const files = Array.from(e.target.files);
+
+        if (existingImages.length + newImages.length + files.length > 10) {
+            toast.error('Maximum 10 images allowed');
+            return;
+        }
+
+        setNewImages(prev => [...prev, ...files]);
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setNewImagePreviews(prev => [...prev, reader.result]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removeExistingImage = (index) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeNewImage = (index) => {
+        setNewImages(prev => prev.filter((_, i) => i !== index));
+        setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const getImageUrl = (imageUrl) => {
+        return imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!formData.name || !formData.price) {
+            toast.error('Please fill in all required fields');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+
+            const data = new FormData();
+            data.append('name', formData.name);
+            data.append('description', formData.description);
+            data.append('category', formData.category);
+            data.append('price', formData.price);
+            data.append('gstRate', formData.gstRate);
+            data.append('stock', formData.stock);
+            data.append('isAvailable', formData.isAvailable);
+            data.append('existingImages', JSON.stringify(existingImages));
+
+            newImages.forEach(image => {
+                data.append('images', image);
+            });
+
+            await updateProduct(id, data);
+            toast.success('Product updated successfully');
+            navigate('/cafeteria/products');
+        } catch (error) {
+            console.error('Error updating product:', error);
+            toast.error('Failed to update product');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-light-bg-secondary dark:bg-dark-bg-secondary rounded-lg shadow-sm p-6"
+            >
+                <div className="mb-6">
+                    <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
+                        Edit Product
+                    </h1>
+                    <p className="text-light-text-muted dark:text-dark-text-muted mt-1">
+                        Update product information
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Product Images */}
+                    <div>
+                        <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                            Product Images (Max 10)
+                        </label>
+
+                        {/* Existing Images */}
+                        {existingImages.length > 0 && (
+                            <div>
+                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mb-2">Existing Images</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                                    {existingImages.map((image, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={getImageUrl(image)}
+                                                alt={`Existing ${index + 1}`}
+                                                className="w-full h-32 object-cover rounded-lg border-2 border-light-bg-accent dark:border-dark-bg-accent"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeExistingImage(index)}
+                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* New Images */}
+                        {newImagePreviews.length > 0 && (
+                            <div>
+                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mb-2">New Images</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                                    {newImagePreviews.map((preview, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={preview}
+                                                alt={`New ${index + 1}`}
+                                                className="w-full h-32 object-cover rounded-lg border-2 border-green-500"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeNewImage(index)}
+                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Upload Button */}
+                        {(existingImages.length + newImages.length) < 10 && (
+                            <div className="flex items-center justify-center w-full">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-light-bg-accent dark:border-dark-bg-accent rounded-lg cursor-pointer hover:bg-light-bg-accent dark:hover:bg-dark-bg-accent transition-colors">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg className="w-8 h-8 mb-2 text-light-text-muted dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
+                                            <span className="font-semibold">Click to upload</span> more images
+                                        </p>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleNewImageChange}
+                                    />
+                                </label>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Product Name */}
+                    <div>
+                        <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                            Product Name *
+                        </label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                            Description
+                        </label>
+                        <textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            rows="3"
+                            className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                    </div>
+
+                    {/* Category and Price */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                                Category *
+                            </label>
+                            <select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                                Price (₹) *
+                            </label>
+                            <input
+                                type="number"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleChange}
+                                required
+                                min="0"
+                                step="0.01"
+                                className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                        </div>
+                    </div>
+
+                    {/* GST Rate and Stock */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                                GST Rate (%)
+                            </label>
+                            <input
+                                type="number"
+                                name="gstRate"
+                                value={formData.gstRate}
+                                onChange={handleChange}
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
+                                Stock Quantity
+                            </label>
+                            <input
+                                type="number"
+                                name="stock"
+                                value={formData.stock}
+                                onChange={handleChange}
+                                min="0"
+                                className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Availability */}
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            name="isAvailable"
+                            checked={formData.isAvailable}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-accent bg-light-bg-primary dark:bg-dark-bg-primary border-light-bg-accent dark:border-dark-bg-accent rounded focus:ring-accent"
+                        />
+                        <label className="ml-2 text-sm font-medium text-light-text-primary dark:text-dark-text-primary">
+                            Product is available for sale
+                        </label>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-4 pt-4">
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1 px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {submitting ? 'Updating...' : 'Update Product'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/cafeteria/products')}
+                            className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
+    );
+};
+
+export default EditCafeteriaProduct;

@@ -16,6 +16,12 @@ import EditInvoice from './pages/EditInvoice';
 import InvoiceDetails from './pages/InvoiceDetails';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import CafeteriaProducts from './pages/CafeteriaProducts';
+import AddCafeteriaProduct from './pages/AddCafeteriaProduct';
+import EditCafeteriaProduct from './pages/EditCafeteriaProduct';
+import CafeteriaOrders from './pages/CafeteriaOrders';
+import CreateCafeteriaOrder from './pages/CreateCafeteriaOrder';
+import CafeteriaOrderDetails from './pages/CafeteriaOrderDetails';
 import './index.css';
 
 // Protected Route Component
@@ -135,6 +141,54 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute requireAdmin={true}>
                         <Settings />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/products"
+                element={
+                    <ProtectedRoute>
+                        <CafeteriaProducts />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/products/add"
+                element={
+                    <ProtectedRoute>
+                        <AddCafeteriaProduct />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/products/edit/:id"
+                element={
+                    <ProtectedRoute>
+                        <EditCafeteriaProduct />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/orders"
+                element={
+                    <ProtectedRoute>
+                        <CafeteriaOrders />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/orders/create"
+                element={
+                    <ProtectedRoute>
+                        <CreateCafeteriaOrder />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/orders/:id"
+                element={
+                    <ProtectedRoute>
+                        <CafeteriaOrderDetails />
                     </ProtectedRoute>
                 }
             />

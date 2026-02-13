@@ -35,6 +35,106 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             take: 10,
         });
 
+        // 1. Revenue Trend (Last 7 Days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const revenueInvoices = await prisma.invoice.findMany({
+            where: {
+                paymentStatus: { in: ['PAID', 'PARTIAL'] },
+                paidDate: {
+                    gte: sevenDaysAgo
+                }
+            },
+            select: {
+                paidDate: true,
+                totalAmount: true
+            }
+        });
+
+        const revenueTrendMap = {};
+        // Initialize last 7 days with 0
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+            revenueTrendMap[dayName] = 0;
+        }
+
+        // Fill with actual data
+        revenueInvoices.forEach(inv => {
+            if (inv.paidDate) {
+                const dayName = new Date(inv.paidDate).toLocaleDateString('en-US', { weekday: 'short' });
+                if (revenueTrendMap[dayName] !== undefined) {
+                    revenueTrendMap[dayName] += inv.totalAmount;
+                }
+            }
+        });
+
+        const revenueTrend = {
+            labels: Object.keys(revenueTrendMap),
+            values: Object.values(revenueTrendMap)
+        };
+
+        // 2. Member Growth (Last 6 Months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
+
+        const newMembers = await prisma.member.findMany({
+            where: {
+                createdAt: {
+                    gte: sixMonthsAgo
+                }
+            },
+            select: {
+                createdAt: true
+            }
+        });
+
+        const memberGrowthMap = {};
+        // Initialize last 6 months with 0
+        for (let i = 0; i < 6; i++) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - (5 - i));
+            const monthName = d.toLocaleDateString('en-US', { month: 'short' });
+            memberGrowthMap[monthName] = 0;
+        }
+
+        // Fill with actual data
+        newMembers.forEach(m => {
+            const monthName = new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short' });
+            if (memberGrowthMap[monthName] !== undefined) {
+                memberGrowthMap[monthName]++;
+            }
+        });
+
+        const memberGrowth = {
+            labels: Object.keys(memberGrowthMap),
+            values: Object.values(memberGrowthMap)
+        };
+
+        // 3. Renewal Rate Calculation
+        // Logic: (Members with > 1 PAID invoice) / (Members with >= 1 PAID invoice) * 100
+        const payingMembers = await prisma.invoice.groupBy({
+            by: ['memberId'],
+            where: {
+                paymentStatus: 'PAID'
+            },
+            _count: {
+                id: true
+            }
+        });
+
+        const totalPayingMembers = payingMembers.length;
+        const renewedMembers = payingMembers.filter(m => m._count.id > 1).length;
+
+        const renewalRate = totalPayingMembers > 0
+            ? Math.round((renewedMembers / totalPayingMembers) * 100)
+            : 0;
+
         res.json({
             success: true,
             stats: {
@@ -43,6 +143,9 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
                 todayCollections,
                 overduePayments: overdueInvoices.length,
                 recentTransactions,
+                revenueTrend,
+                memberGrowth,
+                renewalRate
             },
         });
     } catch (error) {

@@ -19,7 +19,7 @@ import Settings from './pages/Settings';
 import CafeteriaProducts from './pages/CafeteriaProducts';
 import AddCafeteriaProduct from './pages/AddCafeteriaProduct';
 import EditCafeteriaProduct from './pages/EditCafeteriaProduct';
-import CafeteriaOrders from './pages/CafeteriaOrders';
+import CafeteriaOrders from './pages/CafeteriaOrdersSimple';
 import CreateCafeteriaOrder from './pages/CreateCafeteriaOrder';
 import CafeteriaOrderDetails from './pages/CafeteriaOrderDetails';
 import './index.css';
@@ -165,6 +165,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <EditCafeteriaProduct />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/cafeteria/create-order"
+                element={
+                    <ProtectedRoute>
+                        <CreateCafeteriaOrder />
                     </ProtectedRoute>
                 }
             />

@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Razorpay = require('razorpay');
 
 // Configure multer for multiple image uploads
 const storage = multer.diskStorage({
@@ -37,6 +38,36 @@ const upload = multer({
 });
 
 // ==================== PRODUCT ROUTES ====================
+
+// Helper to get Razorpay instance and keys
+const getRazorpayConfig = async () => {
+    // 1. Try DB Settings
+    const settings = await prisma.settings.findFirst();
+    if (settings && settings.razorpayKeyId && settings.razorpayKeySecret) {
+        return {
+            key_id: settings.razorpayKeyId,
+            key_secret: settings.razorpayKeySecret,
+            instance: new Razorpay({
+                key_id: settings.razorpayKeyId,
+                key_secret: settings.razorpayKeySecret,
+            })
+        };
+    }
+
+    // 2. Try Environment Variables
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+        return {
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+            instance: new Razorpay({
+                key_id: process.env.RAZORPAY_KEY_ID,
+                key_secret: process.env.RAZORPAY_KEY_SECRET,
+            })
+        };
+    }
+
+    throw new Error('Razorpay keys not configured in Settings or Environment Variables');
+};
 
 // Get all products
 router.get('/products', async (req, res) => {
@@ -86,10 +117,25 @@ router.get('/products/:id', async (req, res) => {
 // Create product with multiple images
 router.post('/products', upload.array('images', 10), async (req, res) => {
     try {
+        console.log('📦 Creating product...');
+        console.log('Request body:', req.body);
+        console.log('Files:', req.files);
+
         const { name, description, category, price, gstRate, stock, isAvailable } = req.body;
 
         // Get uploaded image paths
         const images = req.files ? req.files.map(file => `/uploads/cafeteria/${file.filename}`) : [];
+
+        console.log('Product data:', {
+            name,
+            description,
+            category,
+            price: parseFloat(price),
+            gstRate: gstRate ? parseFloat(gstRate) : 18,
+            images,
+            stock: stock ? parseInt(stock) : 0,
+            isAvailable: isAvailable === 'true' || isAvailable === true
+        });
 
         const product = await prisma.cafeteriaProduct.create({
             data: {
@@ -104,10 +150,13 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
             }
         });
 
+        console.log('✅ Product created:', product);
         res.status(201).json(product);
     } catch (error) {
-        console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Failed to create product' });
+        console.error('❌ Error creating product:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ error: 'Failed to create product', details: error.message });
     }
 });
 
@@ -340,6 +389,41 @@ router.post('/orders', async (req, res) => {
     }
 });
 
+// Initiate Razorpay payment for order
+router.post('/orders/:id/initiate-payment', async (req, res) => {
+    try {
+        const order = await prisma.cafeteriaOrder.findUnique({
+            where: { id: req.params.id }
+        });
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const { instance, key_id } = await getRazorpayConfig();
+
+        const options = {
+            amount: Math.round(order.totalAmount * 100), // amount in paise
+            currency: 'INR',
+            receipt: order.orderNumber,
+            payment_capture: 1
+        };
+
+        const razorpayOrder = await instance.orders.create(options);
+
+        res.json({
+            success: true,
+            order: razorpayOrder,
+            key: key_id,
+            amount: options.amount,
+            currency: options.currency
+        });
+    } catch (error) {
+        console.error('Razorpay Init Error:', error);
+        res.status(500).json({ error: 'Failed to initiate payment', details: error.message });
+    }
+});
+
 // Update order payment status
 router.put('/orders/:id/payment', async (req, res) => {
     try {
@@ -373,6 +457,15 @@ router.put('/orders/:id/payment', async (req, res) => {
 // Delete order
 router.delete('/orders/:id', async (req, res) => {
     try {
+        const order = await prisma.cafeteriaOrder.findUnique({
+            where: { id: req.params.id }
+        });
+
+        if (!order) {
+            console.log('Order not found:', req.params.id);
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
         await prisma.cafeteriaOrder.delete({
             where: { id: req.params.id }
         });
@@ -380,7 +473,7 @@ router.delete('/orders/:id', async (req, res) => {
         res.json({ message: 'Order deleted successfully' });
     } catch (error) {
         console.error('Error deleting order:', error);
-        res.status(500).json({ error: 'Failed to delete order' });
+        res.status(500).json({ error: 'Failed to delete order', details: error.message });
     }
 });
 
@@ -398,9 +491,9 @@ router.get('/analytics', async (req, res) => {
             if (endDate) where.createdAt.lte = new Date(endDate);
         }
 
-        // Total revenue
+        // Total revenue (Excluding GST)
         const orders = await prisma.cafeteriaOrder.findMany({ where });
-        const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount - order.gstAmount), 0);
         const totalPaid = orders.reduce((sum, order) => sum + order.paidAmount, 0);
 
         // Order statistics

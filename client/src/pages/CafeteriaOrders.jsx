@@ -74,6 +74,22 @@ const CafeteriaOrders = () => {
 
     return (
         <div className="space-y-6">
+            {/* Navigation Tabs */}
+            <div className="flex gap-4 border-b border-light-bg-accent dark:border-dark-bg-accent">
+                <Link
+                    to="/cafeteria/products"
+                    className="px-6 py-3 font-medium border-b-2 border-transparent text-light-text-muted dark:text-dark-text-muted hover:text-light-text-primary dark:hover:text-dark-text-primary transition-colors"
+                >
+                    Products
+                </Link>
+                <Link
+                    to="/cafeteria/orders"
+                    className="px-6 py-3 font-medium border-b-2 border-accent text-accent"
+                >
+                    Orders
+                </Link>
+            </div>
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -81,7 +97,7 @@ const CafeteriaOrders = () => {
                         Cafeteria Orders
                     </h1>
                     <p className="text-light-text-muted dark:text-dark-text-muted mt-1">
-                        Manage cafeteria orders and invoices
+                        Manage cafeteria orders and billing
                     </p>
                 </div>
                 <Link

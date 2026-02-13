@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { getProductById, updateProduct } from '../services/cafeteriaService';
+import { BASE_URL } from '../services/api';
 
 const EditCafeteriaProduct = () => {
     const { id } = useParams();
@@ -88,7 +89,7 @@ const EditCafeteriaProduct = () => {
     };
 
     const getImageUrl = (imageUrl) => {
-        return imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`;
+        return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
     };
 
     const handleSubmit = async (e) => {

@@ -7,10 +7,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export const getAllProducts = async (filters = {}) => {
     const params = new URLSearchParams();
     if (filters.category) params.append('category', filters.category);
-    if (filters.available !== undefined) params.append('available', filters.available);
+    if (filters.available !== undefined && filters.available !== '') params.append('available', filters.available);
     if (filters.search) params.append('search', filters.search);
 
+    console.log('🌐 API Request URL:', `${API_URL}/cafeteria/products?${params}`);
     const response = await axios.get(`${API_URL}/cafeteria/products?${params}`);
+    console.log('🌐 API Response:', response.data);
     return response.data;
 };
 
@@ -67,6 +69,11 @@ export const createOrder = async (orderData) => {
 
 export const updateOrderPayment = async (id, paymentData) => {
     const response = await axios.put(`${API_URL}/cafeteria/orders/${id}/payment`, paymentData);
+    return response.data;
+};
+
+export const initiateRazorpayPayment = async (orderId) => {
+    const response = await axios.post(`${API_URL}/cafeteria/orders/${orderId}/initiate-payment`);
     return response.data;
 };
 

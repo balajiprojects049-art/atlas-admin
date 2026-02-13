@@ -21,7 +21,8 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 };
 
-const API_URL = getApiUrl();
+export const API_URL = getApiUrl();
+export const BASE_URL = API_URL.replace('/api', '');
 
 // Debug logging (only in development)
 if (import.meta.env.DEV) {

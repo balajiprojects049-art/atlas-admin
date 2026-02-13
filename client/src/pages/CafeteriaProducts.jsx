@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { getAllProducts, deleteProduct } from '../services/cafeteriaService';
+import { BASE_URL } from '../services/api';
 
 const CafeteriaProducts = () => {
     const navigate = useNavigate();
@@ -26,10 +27,14 @@ const CafeteriaProducts = () => {
                 available: availableFilter,
                 search: searchTerm
             };
+            console.log('🔍 Fetching products with filters:', filters);
             const data = await getAllProducts(filters);
+            console.log('📦 Products received:', data);
+            console.log('📊 Products count:', data.length);
             setProducts(data);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            console.error('❌ Error fetching products:', error);
+            console.error('Error response:', error.response);
             toast.error('Failed to fetch products');
         } finally {
             setLoading(false);
@@ -57,7 +62,7 @@ const CafeteriaProducts = () => {
     const getImageUrl = (images) => {
         if (!images || images.length === 0) return '/placeholder-product.png';
         const imageUrl = images[0];
-        return imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`;
+        return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
     };
 
     if (loading) {
@@ -70,6 +75,28 @@ const CafeteriaProducts = () => {
 
     return (
         <div className="space-y-6">
+            {/* Navigation Tabs */}
+            <div className="flex gap-4 border-b border-light-bg-accent dark:border-dark-bg-accent">
+                <Link
+                    to="/cafeteria/products"
+                    className="px-6 py-3 font-medium border-b-2 border-accent text-accent"
+                >
+                    Products
+                </Link>
+                <Link
+                    to="/cafeteria/create-order"
+                    className="px-6 py-3 font-medium border-b-2 border-transparent text-light-text-muted dark:text-dark-text-muted hover:text-light-text-primary dark:hover:text-dark-text-primary transition-colors"
+                >
+                    Create Order
+                </Link>
+                <Link
+                    to="/cafeteria/orders"
+                    className="px-6 py-3 font-medium border-b-2 border-transparent text-light-text-muted dark:text-dark-text-muted hover:text-light-text-primary dark:hover:text-dark-text-primary transition-colors"
+                >
+                    Orders
+                </Link>
+            </div>
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>

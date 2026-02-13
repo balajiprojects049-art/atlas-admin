@@ -14,7 +14,7 @@ const AddCafeteriaProduct = () => {
         description: '',
         category: 'Beverages',
         price: '',
-        gstRate: '18',
+        gstRate: '0',
         stock: '0',
         isAvailable: true
     });
@@ -236,7 +236,7 @@ const AddCafeteriaProduct = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
-                                GST Rate (%)
+                                GST Rate (%) <span className="text-light-text-muted dark:text-dark-text-muted text-xs">(Optional)</span>
                             </label>
                             <input
                                 type="number"

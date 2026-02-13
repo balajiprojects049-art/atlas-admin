@@ -152,7 +152,7 @@ model CafeteriaProduct {
   description String?
   category    String    // Beverages, Snacks, Meals, Supplements, Others
   price       Float
-  gstRate     Float     @default(18) // 18% GST
+  gstRate     Float     @default(0) // Optional GST, default 0%
   images      String[]  // Array of image URLs
   stock       Int       @default(0)
   isAvailable Boolean   @default(true)
@@ -197,7 +197,7 @@ model CafeteriaOrderItem {
   productName String    // Store product name at time of order
   quantity    Int
   price       Float     // Price at time of order
-  gstRate     Float     // GST rate at time of order
+  gstRate     Float     @default(0) // GST rate at time of order
   amount      Float     // Total amount for this item
   createdAt   DateTime  @default(now())
 

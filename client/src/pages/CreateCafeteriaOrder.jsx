@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { getAllProducts } from '../services/cafeteriaService';
-import { createOrder } from '../services/cafeteriaService';
+import { getAllProducts, createOrder, initiateRazorpayPayment, updateOrderPayment } from '../services/cafeteriaService';
+import { BASE_URL } from '../services/api';
 
 const CreateCafeteriaOrder = () => {
     const navigate = useNavigate();
@@ -15,7 +15,7 @@ const CreateCafeteriaOrder = () => {
         customerPhone: '',
         customerId: ''
     });
-    const [discount, setDiscount] = useState(0);
+    const [discount, setDiscount] = useState('');
     const [discountType, setDiscountType] = useState('AMOUNT');
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,11 +43,18 @@ const CreateCafeteriaOrder = () => {
                     : item
             ));
         } else {
+            const imageUrl = product.images && product.images.length > 0
+                ? (product.images[0].startsWith('http')
+                    ? product.images[0]
+                    : `${BASE_URL}${product.images[0]}`)
+                : '/placeholder-product.png';
+
             setCart([...cart, {
                 productId: product.id,
                 name: product.name,
                 price: product.price,
                 gstRate: product.gstRate,
+                image: imageUrl,
                 quantity: 1
             }]);
         }
@@ -74,21 +81,42 @@ const CreateCafeteriaOrder = () => {
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
         let discountAmount = 0;
-        if (discount > 0) {
+        const discountValue = parseFloat(discount) || 0;
+        if (discountValue > 0) {
             if (discountType === 'PERCENTAGE') {
-                discountAmount = (subtotal * discount) / 100;
+                discountAmount = (subtotal * discountValue) / 100;
             } else {
-                discountAmount = discount;
+                discountAmount = discountValue;
             }
         }
 
         const discountedSubtotal = subtotal - discountAmount;
-        const gstAmount = (discountedSubtotal * 18) / 100;
+
+        // Calculate GST based on each product's individual GST rate
+        let gstAmount = 0;
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            const itemDiscount = (itemTotal / subtotal) * discountAmount; // Proportional discount
+            const itemDiscountedTotal = itemTotal - itemDiscount;
+            const itemGst = (itemDiscountedTotal * (item.gstRate || 0)) / 100;
+            gstAmount += itemGst;
+        });
+
         const cgst = gstAmount / 2;
         const sgst = gstAmount / 2;
         const total = discountedSubtotal + gstAmount;
 
         return { subtotal, discountAmount, discountedSubtotal, gstAmount, cgst, sgst, total };
+    };
+
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -115,18 +143,70 @@ const CreateCafeteriaOrder = () => {
                     productId: item.productId,
                     quantity: item.quantity
                 })),
-                discount: discountType === 'PERCENTAGE' ? discount : calculateTotals().discountAmount,
+                discount: parseFloat(discount) || 0,
                 discountType,
                 paymentMethod
             };
 
             const order = await createOrder(orderData);
-            toast.success('Order created successfully');
-            navigate(`/cafeteria/orders/${order.id}`);
+
+            if (paymentMethod === 'Razorpay') {
+                const isLoaded = await loadRazorpay();
+                if (!isLoaded) {
+                    toast.error('Razorpay SDK failed to load');
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await initiateRazorpayPayment(order.id);
+
+                const options = {
+                    key: data.key,
+                    amount: data.amount,
+                    currency: data.currency,
+                    name: "Atlas Fitness Elite",
+                    description: "Cafeteria Order",
+                    order_id: data.order.id,
+                    handler: async function (response) {
+                        try {
+                            await updateOrderPayment(order.id, {
+                                paymentStatus: 'PAID',
+                                paymentMethod: 'Razorpay',
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                paidAmount: order.totalAmount
+                            });
+                            toast.success('Payment successful!');
+                            navigate(`/cafeteria/orders/${order.id}`);
+                        } catch (error) {
+                            console.error('Payment verification failed:', error);
+                            toast.error('Payment verification failed');
+                            navigate(`/cafeteria/orders/${order.id}`);
+                        }
+                    },
+                    prefill: {
+                        name: customerInfo.customerName,
+                        contact: customerInfo.customerPhone,
+                    },
+                    theme: {
+                        color: "#3399cc"
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            setLoading(false);
+                        }
+                    }
+                };
+
+                const paymentObject = new window.Razorpay(options);
+                paymentObject.open();
+            } else {
+                toast.success('Order created successfully');
+                navigate(`/cafeteria/orders/${order.id}`);
+            }
         } catch (error) {
             console.error('Error creating order:', error);
             toast.error('Failed to create order');
-        } finally {
             setLoading(false);
         }
     };
@@ -139,12 +219,34 @@ const CreateCafeteriaOrder = () => {
 
     return (
         <div className="space-y-6">
+            {/* Navigation Tabs */}
+            <div className="flex gap-4 border-b border-light-bg-accent dark:border-dark-bg-accent">
+                <Link
+                    to="/cafeteria/products"
+                    className="px-6 py-3 font-medium border-b-2 border-transparent text-light-text-muted dark:text-dark-text-muted hover:text-light-text-primary dark:hover:text-dark-text-primary transition-colors"
+                >
+                    Products
+                </Link>
+                <Link
+                    to="/cafeteria/create-order"
+                    className="px-6 py-3 font-medium border-b-2 border-accent text-accent"
+                >
+                    Create Order
+                </Link>
+                <Link
+                    to="/cafeteria/orders"
+                    className="px-6 py-3 font-medium border-b-2 border-transparent text-light-text-muted dark:text-dark-text-muted hover:text-light-text-primary dark:hover:text-dark-text-primary transition-colors"
+                >
+                    Orders
+                </Link>
+            </div>
+
             <div>
                 <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
                     Create Order
                 </h1>
                 <p className="text-light-text-muted dark:text-dark-text-muted mt-1">
-                    Create a new cafeteria order
+                    Select products and create a new cafeteria order
                 </p>
             </div>
 
@@ -207,23 +309,92 @@ const CreateCafeteriaOrder = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent mb-4"
                         />
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                            {filteredProducts.map(product => (
-                                <div
-                                    key={product.id}
-                                    onClick={() => addToCart(product)}
-                                    className="p-4 border border-light-bg-accent dark:border-dark-bg-accent rounded-lg cursor-pointer hover:bg-light-bg-accent dark:hover:bg-dark-bg-accent transition-colors"
-                                >
-                                    <h3 className="font-semibold text-light-text-primary dark:text-dark-text-primary text-sm mb-1">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-accent font-bold">₹{product.price.toFixed(2)}</p>
-                                    <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                                        Stock: {product.stock}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
+
+                        {filteredProducts.length === 0 ? (
+                            <div className="text-center py-8">
+                                <p className="text-light-text-muted dark:text-dark-text-muted">
+                                    No products available
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                                {filteredProducts.map(product => {
+                                    const imageUrl = product.images && product.images.length > 0
+                                        ? (product.images[0].startsWith('http')
+                                            ? product.images[0]
+                                            : `http://localhost:5000${product.images[0]}`)
+                                        : '/placeholder-product.png';
+
+                                    return (
+                                        <div
+                                            key={product.id}
+                                            className="flex gap-4 bg-light-bg-accent dark:bg-dark-bg-accent rounded-lg overflow-hidden border border-light-bg-accent dark:border-dark-bg-accent hover:shadow-lg transition-shadow p-3"
+                                        >
+                                            {/* Product Image - Left Side */}
+                                            <div className="relative w-24 h-24 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.src = '/placeholder-product.png';
+                                                    }}
+                                                />
+                                                {product.stock <= 5 && product.stock > 0 && (
+                                                    <div className="absolute top-1 right-1 px-2 py-0.5 bg-orange-500 text-white text-xs font-semibold rounded">
+                                                        Low
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Product Details - Right Side */}
+                                            <div className="flex-1 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex items-start justify-between mb-1">
+                                                        <div className="flex-1">
+                                                            <span className="text-xs font-semibold text-accent uppercase">
+                                                                {product.category}
+                                                            </span>
+                                                            <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary text-base">
+                                                                {product.name}
+                                                            </h3>
+                                                        </div>
+                                                        <div className="text-right ml-2">
+                                                            <p className="text-accent font-bold text-lg">
+                                                                ₹{product.price.toFixed(2)}
+                                                            </p>
+                                                            {product.gstRate > 0 && (
+                                                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                                                                    + {product.gstRate}% GST
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-light-text-muted dark:text-dark-text-muted mb-2 line-clamp-1">
+                                                        {product.description || 'No description'}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <p className="text-xs font-semibold text-light-text-primary dark:text-dark-text-primary">
+                                                        Stock: {product.stock}
+                                                    </p>
+                                                    {/* Add to Cart Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => addToCart(product)}
+                                                        disabled={product.stock <= 0}
+                                                        className="px-4 py-1.5 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {product.stock <= 0 ? 'Out of Stock' : '+ Add to Cart'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </motion.div>
                 </div>
 
@@ -246,16 +417,29 @@ const CreateCafeteriaOrder = () => {
                         ) : (
                             <div className="space-y-3 max-h-64 overflow-y-auto">
                                 {cart.map(item => (
-                                    <div key={item.productId} className="flex justify-between items-center p-3 bg-light-bg-accent dark:bg-dark-bg-accent rounded-lg">
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-light-text-primary dark:text-dark-text-primary text-sm">
+                                    <div key={item.productId} className="flex gap-3 items-center p-3 bg-light-bg-accent dark:bg-dark-bg-accent rounded-lg">
+                                        {/* Product Image */}
+                                        <img
+                                            src={item.image || '/placeholder-product.png'}
+                                            alt={item.name}
+                                            className="w-12 h-12 object-cover rounded flex-shrink-0"
+                                            onError={(e) => {
+                                                e.target.src = '/placeholder-product.png';
+                                            }}
+                                        />
+
+                                        {/* Product Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-light-text-primary dark:text-dark-text-primary text-sm truncate">
                                                 {item.name}
                                             </p>
                                             <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
                                                 ₹{item.price} × {item.quantity}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-2">
+
+                                        {/* Quantity Controls */}
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                             <button
                                                 type="button"
                                                 onClick={() => updateQuantity(item.productId, item.quantity - 1)}
@@ -295,7 +479,7 @@ const CreateCafeteriaOrder = () => {
                                 <input
                                     type="number"
                                     value={discount}
-                                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => setDiscount(e.target.value)}
                                     min="0"
                                     step="0.01"
                                     className="flex-1 px-4 py-2 rounded-lg border border-light-bg-accent dark:border-dark-bg-accent bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
@@ -336,18 +520,22 @@ const CreateCafeteriaOrder = () => {
                                     <span>-₹{totals.discountAmount.toFixed(2)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between">
-                                <span className="text-light-text-muted dark:text-dark-text-muted">CGST (9%):</span>
-                                <span className="font-semibold text-light-text-primary dark:text-dark-text-primary">
-                                    ₹{totals.cgst.toFixed(2)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-light-text-muted dark:text-dark-text-muted">SGST (9%):</span>
-                                <span className="font-semibold text-light-text-primary dark:text-dark-text-primary">
-                                    ₹{totals.sgst.toFixed(2)}
-                                </span>
-                            </div>
+                            {totals.gstAmount > 0 && (
+                                <>
+                                    <div className="flex justify-between">
+                                        <span className="text-light-text-muted dark:text-dark-text-muted">CGST (9%):</span>
+                                        <span className="font-semibold text-light-text-primary dark:text-dark-text-primary">
+                                            ₹{totals.cgst.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-light-text-muted dark:text-dark-text-muted">SGST (9%):</span>
+                                        <span className="font-semibold text-light-text-primary dark:text-dark-text-primary">
+                                            ₹{totals.sgst.toFixed(2)}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
                             <div className="border-t border-light-bg-accent dark:border-dark-bg-accent pt-2 mt-2">
                                 <div className="flex justify-between text-lg font-bold">
                                     <span className="text-light-text-primary dark:text-dark-text-primary">Total:</span>
@@ -369,6 +557,8 @@ const CreateCafeteriaOrder = () => {
                                 <option value="Cash">Cash</option>
                                 <option value="UPI">UPI</option>
                                 <option value="Card">Card</option>
+                                <option value="Net Banking">Net Banking</option>
+                                <option value="Razorpay">Razorpay</option>
                             </select>
                         </div>
 
@@ -389,8 +579,8 @@ const CreateCafeteriaOrder = () => {
                         </button>
                     </motion.div>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
 

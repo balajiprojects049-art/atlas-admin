@@ -11,37 +11,37 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         {
             name: 'Dashboard',
             path: '/dashboard',
-            icon: '📊',
+            icon: '/Dashboard.png',
             allowedRoles: ['admin', 'staff', 'trainer'],
         },
         {
             name: 'Members',
             path: '/members',
-            icon: '👥',
+            icon: '/Members.png',
             allowedRoles: ['admin', 'staff', 'trainer'],
         },
         {
             name: 'Billing & Invoices',
             path: '/invoices',
-            icon: '🧾',
+            icon: '/bill.png',
             allowedRoles: ['admin', 'staff'],
         },
         {
             name: 'Cafeteria',
             path: '/cafeteria/products',
-            icon: '',
+            icon: '/cafeteria.png',
             allowedRoles: ['admin', 'staff'],
         },
         {
             name: 'Reports',
             path: '/reports',
-            icon: '📈',
+            icon: '/report.png',
             allowedRoles: ['admin', 'staff', 'trainer'],
         },
         {
             name: 'Settings',
             path: '/settings',
-            icon: '⚙️',
+            icon: '/settings.png',
             allowedRoles: ['admin'],
         },
     ];
@@ -79,7 +79,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         `}
             >
                 {/* Logo/Brand */}
-                {/* Logo/Brand */}
                 <div className="p-6 border-b border-light-bg-accent dark:border-dark-bg-accent flex flex-col items-center gap-2 text-center">
                     <img src="/gym_logo.png" alt="Atlas Fitness Logo" className="w-24 h-auto object-contain mb-1" />
                     <div>
@@ -97,7 +96,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 <nav className="flex-1 p-4 overflow-y-auto">
                     <ul className="space-y-2">
                         {filteredNav.map((item) => {
-                            const isActive = location.pathname === item.path;
+                            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
                             return (
                                 <li key={item.path}>
                                     <Link
@@ -111,7 +110,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                                             }
                     `}
                                     >
-                                        <span className="text-xl">{item.icon}</span>
+                                        <img
+                                            src={item.icon}
+                                            alt={item.name}
+                                            className={`w-6 h-6 object-contain transition-all duration-200 ${isActive
+                                                    ? 'brightness-0 invert'
+                                                    : 'dark:brightness-0 dark:invert opacity-70 hover:opacity-100'
+                                                }`}
+                                        />
                                         <span className="font-medium">{item.name}</span>
                                     </Link>
                                 </li>

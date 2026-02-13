@@ -8,23 +8,12 @@ const fs = require('fs');
 const Razorpay = require('razorpay');
 
 // Configure multer for multiple image uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = 'uploads/cafeteria';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure multer for memory storage (Serverless compatible)
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 4 * 1024 * 1024 }, // 4MB limit (Vercel has 4.5MB body limit)
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -115,27 +104,16 @@ router.get('/products/:id', async (req, res) => {
 });
 
 // Create product with multiple images
-router.post('/products', upload.array('images', 10), async (req, res) => {
+router.post('/products', upload.array('images', 5), async (req, res) => {
     try {
         console.log('📦 Creating product...');
-        console.log('Request body:', req.body);
-        console.log('Files:', req.files);
 
         const { name, description, category, price, gstRate, stock, isAvailable } = req.body;
 
-        // Get uploaded image paths
-        const images = req.files ? req.files.map(file => `/uploads/cafeteria/${file.filename}`) : [];
-
-        console.log('Product data:', {
-            name,
-            description,
-            category,
-            price: parseFloat(price),
-            gstRate: gstRate ? parseFloat(gstRate) : 18,
-            images,
-            stock: stock ? parseInt(stock) : 0,
-            isAvailable: isAvailable === 'true' || isAvailable === true
-        });
+        // Process images to Base64
+        const images = req.files ? req.files.map(file => {
+            return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+        }) : [];
 
         const product = await prisma.cafeteriaProduct.create({
             data: {
@@ -150,27 +128,27 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
             }
         });
 
-        console.log('✅ Product created:', product);
+        console.log('✅ Product created:', product.id);
         res.status(201).json(product);
     } catch (error) {
         console.error('❌ Error creating product:', error);
-        console.error('Error details:', error.message);
-        console.error('Error stack:', error.stack);
         res.status(500).json({ error: 'Failed to create product', details: error.message });
     }
 });
 
 // Update product
-router.put('/products/:id', upload.array('images', 10), async (req, res) => {
+router.put('/products/:id', upload.array('images', 5), async (req, res) => {
     try {
         const { name, description, category, price, gstRate, stock, isAvailable, existingImages } = req.body;
 
-        // Parse existing images (sent as JSON string)
+        // Parse existing images
         let images = existingImages ? JSON.parse(existingImages) : [];
 
-        // Add new uploaded images
+        // Add new uploaded images as Base64
         if (req.files && req.files.length > 0) {
-            const newImages = req.files.map(file => `/uploads/cafeteria/${file.filename}`);
+            const newImages = req.files.map(file => {
+                return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            });
             images = [...images, ...newImages];
         }
 

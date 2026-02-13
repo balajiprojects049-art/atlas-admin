@@ -44,7 +44,7 @@ const CreateCafeteriaOrder = () => {
             ));
         } else {
             const imageUrl = product.images && product.images.length > 0
-                ? (product.images[0].startsWith('http')
+                ? (product.images[0].startsWith('http') || product.images[0].startsWith('data:')
                     ? product.images[0]
                     : `${BASE_URL}${product.images[0]}`)
                 : '/placeholder-product.png';
@@ -320,9 +320,9 @@ const CreateCafeteriaOrder = () => {
                             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                                 {filteredProducts.map(product => {
                                     const imageUrl = product.images && product.images.length > 0
-                                        ? (product.images[0].startsWith('http')
+                                        ? (product.images[0].startsWith('http') || product.images[0].startsWith('data:')
                                             ? product.images[0]
-                                            : `http://localhost:5000${product.images[0]}`)
+                                            : `${BASE_URL}${product.images[0]}`)
                                         : '/placeholder-product.png';
 
                                     return (

@@ -89,7 +89,7 @@ const EditCafeteriaProduct = () => {
     };
 
     const getImageUrl = (imageUrl) => {
-        return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
+        return imageUrl.startsWith('http') || imageUrl.startsWith('data:') ? imageUrl : `${BASE_URL}${imageUrl}`;
     };
 
     const handleSubmit = async (e) => {

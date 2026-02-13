@@ -62,7 +62,7 @@ const CafeteriaProducts = () => {
     const getImageUrl = (images) => {
         if (!images || images.length === 0) return '/placeholder-product.png';
         const imageUrl = images[0];
-        return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
+        return imageUrl.startsWith('http') || imageUrl.startsWith('data:') ? imageUrl : `${BASE_URL}${imageUrl}`;
     };
 
     if (loading) {

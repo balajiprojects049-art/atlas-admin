@@ -1,7 +1,8 @@
 const puppeteer = require('puppeteer');
+const puppeteerCore = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const path = require('path');
 const fs = require('fs');
-
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
 }
@@ -302,10 +303,22 @@ function buildInvoiceHTML(invoice) {
 async function generateInvoicePDF(invoice) {
   const html = buildInvoiceHTML(invoice);
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  let browser;
+
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
+    });
+  } else {
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+  }
 
   try {
     const page = await browser.newPage();

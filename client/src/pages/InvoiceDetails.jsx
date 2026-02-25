@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import { formatCurrency, formatDate, numberToWords } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { Printer, ArrowLeft, Download, Share2, Loader2 } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 
 const InvoiceDetails = () => {
     const { id } = useParams();
@@ -43,28 +44,20 @@ const InvoiceDetails = () => {
     const handleDownload = async () => {
         setDownloading(true);
         const toastId = toast.loading('Generating PDF...');
+
         try {
-            const response = await invoiceAPI.downloadPDF(id);
+            const element = document.getElementById('invoice-preview');
 
-            let blob;
-            if (response.data instanceof Blob) {
-                blob = response.data;
-            } else {
-                blob = new Blob([response.data], { type: 'application/pdf' });
-            }
+            // Temporarily adjustments before generating PDF
+            const opt = {
+                margin: 0,
+                filename: `Invoice_${invoice.invoiceNumber}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+            };
 
-            if (!blob || blob.size === 0) {
-                throw new Error('Empty PDF received');
-            }
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Invoice_${invoice.invoiceNumber}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.parentNode.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            await html2pdf().set(opt).from(element).save();
             toast.success('PDF downloaded successfully!', { id: toastId });
         } catch (error) {
             console.error('Download failed:', error);

@@ -264,7 +264,11 @@ const InvoiceDetails = () => {
                                         Gym Membership — {invoice.plan?.name || 'Standard Plan'}
                                     </div>
                                     <div style={{ fontSize: '11px', color: '#888' }}>
-                                        Period: {formatDate(invoice.createdAt)} &nbsp;→&nbsp; {formatDate(invoice.dueDate)}
+                                        Period: {(() => {
+                                            const startDate = new Date(invoice.dueDate);
+                                            startDate.setMonth(startDate.getMonth() - (invoice.plan?.duration || 1));
+                                            return formatDate(startDate);
+                                        })()} &nbsp;→&nbsp; {formatDate(invoice.dueDate)}
                                     </div>
                                 </td>
                                 <td style={{ padding: '14px 16px', textAlign: 'center', color: '#555' }}>

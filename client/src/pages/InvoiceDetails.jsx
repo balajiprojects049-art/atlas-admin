@@ -48,13 +48,16 @@ const InvoiceDetails = () => {
         try {
             const element = document.getElementById('invoice-preview');
 
-            // Temporarily adjustments before generating PDF
+            // Ensure PDF is exactly 1 continuous page
+            const pdfWidth = element.offsetWidth;
+            const pdfHeight = element.offsetHeight;
+
             const opt = {
                 margin: 0,
                 filename: `Invoice_${invoice.invoiceNumber}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+                jsPDF: { unit: 'px', format: [pdfWidth, pdfHeight], orientation: 'portrait' }
             };
 
             await html2pdf().set(opt).from(element).save();
@@ -430,15 +433,6 @@ const InvoiceDetails = () => {
                         zoom: 1;
                     }
                     .print\\:hidden { display: none !important; }
-                    
-                    /* Force terms to page 2 */
-                    .rules-container {
-                        page-break-before: always;
-                        border-top: none !important;
-                        padding-top: 50px !important;
-                        margin-top: 0 !important;
-                        margin-bottom: 30px !important;
-                    }
 
                     /* Repeat red bars on every page */
                     .print-header-bar {

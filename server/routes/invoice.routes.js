@@ -82,6 +82,24 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, requireRole('admin', 'staff'), async (req, res) => {
     try {
         const invoice = await invoiceService.createInvoice(req.body);
+
+        // ── Send invoice email with PDF attachment (async - don't block response) ──
+        setImmediate(async () => {
+            try {
+                // Fetch full invoice with member & plan details for email
+                const fullInvoice = await invoiceService.getInvoiceById(invoice.id);
+                if (fullInvoice && fullInvoice.member && fullInvoice.member.email) {
+                    console.log(`📧 Sending invoice email to ${fullInvoice.member.email}...`);
+                    await emailService.sendInvoiceEmail(fullInvoice);
+                    console.log(`✅ Invoice email sent to ${fullInvoice.member.email}`);
+                } else {
+                    console.log('⚠️ Invoice email skipped — no member email found');
+                }
+            } catch (emailErr) {
+                console.error('❌ Failed to send invoice email:', emailErr.message);
+            }
+        });
+
         res.status(201).json({ success: true, invoice });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

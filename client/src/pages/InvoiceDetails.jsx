@@ -278,7 +278,7 @@ const InvoiceDetails = () => {
                     </table>
 
                     {/* ── TOTALS ── */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px', marginBottom: '36px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px', marginBottom: '20px' }}>
 
                         {/* AMOUNT IN WORDS BOX */}
                         <div style={{ width: '380px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #334155', borderRadius: '6px', padding: '12px 16px', marginBottom: '8px' }}>
@@ -344,8 +344,8 @@ const InvoiceDetails = () => {
                     </div>
 
                     {/* ── MEMBERSHIP TERMS & GYM RULES ── */}
-                    <div className="rules-container" style={{ borderTop: '2.5px solid #1a1a1a', paddingTop: '16px', marginBottom: '18px' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                    <div className="rules-container" style={{ borderTop: '2.5px solid #1a1a1a', paddingTop: '12px', marginBottom: '14px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
                             <div style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '3px', color: '#111', textTransform: 'uppercase' }}>
                                 ATLAS FITNESS
                             </div>
@@ -433,8 +433,8 @@ const InvoiceDetails = () => {
                         page-break-inside: avoid !important;
                     }
                     .invoice-content {
-                        padding: 20px 24px !important;
-                        transform: scale(0.92);
+                        padding: 16px 20px !important;
+                        transform: scale(0.88);
                         transform-origin: top center;
                     }
                     .print\\:hidden { display: none !important; }

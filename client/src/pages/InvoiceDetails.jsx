@@ -154,7 +154,7 @@ const InvoiceDetails = () => {
                 <div className="invoice-content" style={{ padding: '40px 48px' }}>
 
                     {/* ── HEADER: Logo + Title ── */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         {/* Left: Brand */}
                         <div>
                             <img src="/atlas_logo.png" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
@@ -212,7 +212,7 @@ const InvoiceDetails = () => {
                     </div>
 
                     {/* ── DIVIDER ── */}
-                    <div style={{ borderTop: '2px solid #f0f0f0', marginBottom: '28px' }} />
+                    <div style={{ borderTop: '2px solid #f0f0f0', marginBottom: '16px' }} />
 
                     {/* ── BILL TO ── */}
                     <div style={{ marginBottom: '18px' }}>
@@ -433,8 +433,8 @@ const InvoiceDetails = () => {
                         page-break-inside: avoid !important;
                     }
                     .invoice-content {
-                        padding: 24px 32px !important;
-                        transform: scale(0.96);
+                        padding: 20px 24px !important;
+                        transform: scale(0.92);
                         transform-origin: top center;
                     }
                     .print\\:hidden { display: none !important; }

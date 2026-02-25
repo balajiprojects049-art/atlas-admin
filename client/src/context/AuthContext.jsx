@@ -15,68 +15,82 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(sessionStorage.getItem('token'));
 
-    // Configure axios defaults
+    // On mount: restore session from localStorage
     useEffect(() => {
-        if (token) {
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            // Fetch user data
-            fetchUserData();
+        const savedToken = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+
+        if (savedToken && savedUser) {
+            try {
+                const parsedUser = JSON.parse(savedUser);
+                api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+                setUser(parsedUser);
+                setLoading(false);
+                // Quietly verify token is still valid in background
+                authAPI.getCurrentUser()
+                    .then(res => {
+                        if (res.data?.user) {
+                            setUser(res.data.user);
+                            localStorage.setItem('user', JSON.stringify(res.data.user));
+                        }
+                    })
+                    .catch(() => {
+                        // Token expired or invalid — log out silently
+                        _clearSession();
+                    });
+            } catch {
+                _clearSession();
+                setLoading(false);
+            }
         } else {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
-    const fetchUserData = async () => {
-        try {
-            const response = await authAPI.getCurrentUser();
-            setUser(response.data.user);
-        } catch (error) {
-            console.error('Failed to fetch user data:', error);
-            logout();
-        } finally {
-            setLoading(false);
-        }
+    const _clearSession = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        delete api.defaults.headers.common['Authorization'];
+        setUser(null);
     };
 
     const login = async (email, password) => {
         try {
             const response = await authAPI.login({ email, password });
-
             const { token, user } = response.data;
 
-            sessionStorage.setItem('token', token);
-            setToken(token);
-            setUser(user);
+            // Persist to localStorage (survives page refresh)
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            // Set axios default header
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            setUser(user);
 
             return { success: true };
         } catch (error) {
             return {
                 success: false,
-                message: error.response?.data?.message || 'Login failed'
+                message: error.response?.data?.message || 'Login failed',
             };
         }
     };
 
     const logout = () => {
-        sessionStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-        delete api.defaults.headers.common['Authorization'];
+        _clearSession();
     };
 
     const value = {
         user,
-        token,
+        token: localStorage.getItem('token'),
         loading,
         login,
         logout,
         isAuthenticated: !!user,
-        isAdmin: user?.role === 'admin',
-        isStaff: user?.role === 'staff' || user?.role === 'admin',
-        isTrainer: user?.role === 'trainer',
+        isAdmin: user?.role === 'ADMIN' || user?.role === 'admin',
+        isStaff: user?.role === 'STAFF' || user?.role === 'staff' || user?.role === 'ADMIN' || user?.role === 'admin',
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

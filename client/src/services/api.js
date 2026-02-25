@@ -41,13 +41,13 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 30000, // 30 second timeout
+    timeout: 60000, // 60 second timeout (PDFs can take time)
 });
 
 // Request interceptor - Add JWT token to requests
 api.interceptors.request.use(
     (config) => {
-        const token = sessionStorage.getItem('token');
+        const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -61,11 +61,16 @@ api.interceptors.request.use(
 // Response interceptor - Handle errors globally
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         if (error.response?.status === 401) {
+            // If the response is a blob (e.g. PDF download), read it as text first
+            if (error.request?.responseType === 'blob' || error.config?.responseType === 'blob') {
+                // Don't redirect immediately for blob requests, just reject
+                return Promise.reject(error);
+            }
             // Unauthorized - clear token and redirect to login
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.href = '/login';
         }
         return Promise.reject(error);

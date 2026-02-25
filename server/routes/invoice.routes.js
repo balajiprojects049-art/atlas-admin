@@ -2,30 +2,42 @@ const express = require('express');
 const router = express.Router();
 const invoiceService = require('../services/invoice.service');
 const emailService = require('../services/email.service');
+const { generateInvoicePDF } = require('../services/pdf.service');
 const prisma = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 
 // Download Invoice PDF
 router.get('/:id/download', authMiddleware, async (req, res) => {
+    let headersSent = false;
     try {
         const invoice = await invoiceService.getInvoiceById(req.params.id);
         if (!invoice) {
             return res.status(404).json({ success: false, message: 'Invoice not found' });
         }
 
-        // Fetch Gym Name for PDF
-        const settings = await prisma.settings.findFirst();
-        const gymName = settings?.gymName || 'Atlas Fitness Elite';
+        console.log('📄 Generating PDF for invoice:', invoice.invoiceNumber);
+        console.log('📄 Member data:', JSON.stringify(invoice.member));
 
-        const pdfBuffer = await emailService.generateInvoicePDF(invoice, gymName);
+        const pdfBuffer = await generateInvoicePDF(invoice);
+
+        if (!pdfBuffer || pdfBuffer.length < 100) {
+            throw new Error('PDF buffer is empty or too small');
+        }
+
+        console.log('✅ PDF generated, size:', pdfBuffer.length, 'bytes');
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Invoice_${invoice.invoiceNumber}.pdf`);
-        res.send(pdfBuffer);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        headersSent = true;
+        res.end(pdfBuffer);
 
     } catch (error) {
-        console.error('PDF Generation Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to generate PDF' });
+        console.error('❌ PDF Generation Error:', error.message);
+        console.error(error.stack);
+        if (!headersSent) {
+            res.status(500).json({ success: false, message: `Failed to generate PDF: ${error.message}` });
+        }
     }
 });
 

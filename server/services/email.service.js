@@ -184,10 +184,65 @@ class EmailService {
             doc.fillColor('#dc2626').text(`Rs. ${invoice.totalAmount.toFixed(2)}`, valueX, totalPosition, { align: 'right' });
 
             // Footer
-            doc.fontSize(10).fillColor('gray').text('Thank you for your business.', 50, 700, { align: 'center', width: 500 });
+            doc.fontSize(10).fillColor('gray').text('Thank you for choosing Atlas Fitness! Stay strong and keep pushing!', 50, 680, { align: 'center', width: 500 });
             if (invoice.razorpayPaymentId) {
-                doc.text(`Transaction ID: ${invoice.razorpayPaymentId}`, 50, 715, { align: 'center', width: 500 });
+                doc.fontSize(8).text(`Transaction ID: ${invoice.razorpayPaymentId}`, 50, 695, { align: 'center', width: 500 });
             }
+
+            // ══════════════════════════════════════════
+            // PAGE 2 — MEMBERSHIP TERMS & GYM RULES
+            // ══════════════════════════════════════════
+            doc.addPage();
+
+            // Red header bar
+            doc.rect(0, 0, 595, 8).fill('#c0001a');
+
+            // Title
+            doc.fillColor('#1a1a1a').fontSize(16).font('Helvetica-Bold')
+                .text('ATLAS FITNESS', 50, 28, { align: 'center', width: 495 });
+            doc.fillColor('#c0001a').fontSize(11).font('Helvetica-Bold')
+                .text('MEMBERSHIP TERMS & GYM RULES', 50, 50, { align: 'center', width: 495 });
+
+            // Divider
+            doc.moveTo(50, 72).lineTo(545, 72).lineWidth(2).stroke('#1a1a1a');
+
+            const terms = [
+                { n: '1', title: 'General Conduct', text: 'Members must follow all gym policies, maintain discipline, and use equipment responsibly at all times. Entry is allowed only with a valid membership. Proper gym attire and shoes are mandatory.' },
+                { n: '2', title: 'Equipment Usage', text: 'All members are required to re-rack weights, dumbbells, and plates after use and avoid dropping equipment. Machines must be used correctly, and any damage must be reported immediately. Sharing equipment during peak hours is expected.' },
+                { n: '3', title: 'Hygiene', text: 'Maintain strict hygiene. Carry a personal towel, wipe machines after use, and keep the gym clean. Dispose of waste properly and avoid leaving sweat on benches or machines.' },
+                { n: '4', title: 'Safety', text: 'Always warm up and cool down. Use proper techniques and seek trainer guidance when needed. Avoid lifting beyond your capacity without assistance. The gym is not responsible for injuries caused by negligence.' },
+                { n: '5', title: 'Respect & Conduct', text: 'Respect all members and staff. No fighting, arguments, abusive language, or misconduct will be tolerated. Any violation may result in immediate termination of membership without refund.' },
+                { n: '6', title: 'Personal Belongings', text: 'Personal belongings must be stored in lockers. Management is not responsible for any loss or damage. Lockers must be cleared after each session.' },
+                { n: '7', title: 'Membership Fees', text: 'Membership fees are non-refundable and non-transferable. No extensions or pauses are allowed unless approved by management.' },
+            ];
+
+            let termY = 86;
+            terms.forEach((term) => {
+                // Red number badge
+                doc.circle(65, termY + 8, 9).fill('#c0001a');
+                doc.fillColor('#ffffff').fontSize(8).font('Helvetica-Bold')
+                    .text(term.n, 60, termY + 4, { width: 10, align: 'center' });
+
+                // Title
+                doc.fillColor('#111111').fontSize(10).font('Helvetica-Bold')
+                    .text(term.title, 82, termY);
+
+                // Description
+                doc.fillColor('#444444').fontSize(8.5).font('Helvetica')
+                    .text(term.text, 82, termY + 14, { width: 460, lineGap: 2 });
+
+                termY += 56;
+
+                // Light divider (not after last item)
+                if (term.n !== '7') {
+                    doc.moveTo(82, termY - 5).lineTo(545, termY - 5).lineWidth(0.3).stroke('#dddddd');
+                }
+            });
+
+            // Bottom red bar
+            doc.rect(0, 818, 595, 24).fill('#c0001a');
+            doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica')
+                .text('Atlas Fitness Elite  |  3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad - 500076  |  +91 99882 29441', 0, 826, { align: 'center', width: 595 });
 
             doc.end();
         });
@@ -274,8 +329,9 @@ class EmailService {
             const settings = await prisma.settings.findFirst();
             const gymName = settings?.gymName || 'Atlas Fitness Elite';
 
-            // Generate PDF Buffer
-            const pdfBuffer = await this.generateInvoicePDF(invoice, gymName);
+            // Generate pixel-perfect PDF using Puppeteer (matches web view)
+            const { generateInvoicePDF } = require('./pdf.service');
+            const pdfBuffer = await generateInvoicePDF(invoice);
 
             const mailOptions = {
                 from: `"Atlas Fitness Elite" <${sender}>`,

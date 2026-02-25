@@ -4,13 +4,14 @@ import { invoiceAPI } from '../services/api';
 import Button from '../components/ui/Button';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import toast from 'react-hot-toast';
-import { Printer, ArrowLeft, Download, Share2 } from 'lucide-react';
+import { Printer, ArrowLeft, Download, Share2, Loader2 } from 'lucide-react';
 
 const InvoiceDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [invoice, setInvoice] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         fetchInvoice();
@@ -21,7 +22,7 @@ const InvoiceDetails = () => {
             setLoading(true);
             const response = await invoiceAPI.getById(id);
             if (response.data.success) {
-                setInvoice(response.data.invoice || response.data); // in case backend returns directly
+                setInvoice(response.data.invoice || response.data);
             } else {
                 toast.error('Invoice not found');
                 navigate('/invoices');
@@ -40,18 +41,33 @@ const InvoiceDetails = () => {
     };
 
     const handleDownload = async () => {
+        setDownloading(true);
+        const toastId = toast.loading('Generating PDF...');
         try {
             const response = await invoiceAPI.downloadPDF(id);
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            // Validate we got actual PDF data
+            if (!response.data || response.data.size === 0) {
+                throw new Error('Empty PDF received');
+            }
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `Invoice_${invoice.invoiceNumber}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success('PDF downloaded successfully!', { id: toastId });
         } catch (error) {
             console.error('Download failed:', error);
-            toast.error('Failed to download invoice');
+            toast.error('PDF download failed — opening print dialog instead.', { id: toastId });
+            // Fallback: browser print-to-PDF
+            setTimeout(() => window.print(), 500);
+        } finally {
+            setDownloading(false);
         }
     };
 
@@ -67,7 +83,6 @@ const InvoiceDetails = () => {
                 console.error('Error sharing:', error);
             }
         } else {
-            // Fallback: Copy Link
             navigator.clipboard.writeText(window.location.href);
             toast.success('Link copied to clipboard!');
         }
@@ -83,157 +98,302 @@ const InvoiceDetails = () => {
 
     if (!invoice) return null;
 
+    const statusColor =
+        invoice.paymentStatus === 'PAID'
+            ? { bg: '#dcfce7', text: '#166534' }
+            : invoice.paymentStatus === 'PENDING'
+                ? { bg: '#fef9c3', text: '#854d0e' }
+                : { bg: '#fee2e2', text: '#991b1b' };
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between print:hidden">
+        <div style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+
+            {/* Action Bar — hidden on print */}
+            <div className="flex items-center justify-between mb-6 print:hidden">
                 <Button variant="ghost" onClick={() => navigate('/invoices')} className="flex items-center gap-2">
                     <ArrowLeft size={20} /> Back to Invoices
                 </Button>
                 <div className="flex gap-3">
                     <Button variant="outline" onClick={handlePrint}>
-                        <Printer size={20} className="mr-2" /> Print
+                        <Printer size={18} className="mr-2" /> Print
                     </Button>
-                    <Button variant="outline" onClick={handleDownload}>
-                        <Download size={20} className="mr-2" /> Download
+                    <Button variant="outline" onClick={handleDownload} disabled={downloading}>
+                        {downloading
+                            ? <><Loader2 size={18} className="mr-2 animate-spin" /> Generating...</>
+                            : <><Download size={18} className="mr-2" /> Download PDF</>}
                     </Button>
                     <Button variant="outline" onClick={handleShare}>
-                        <Share2 size={20} className="mr-2" /> Share
+                        <Share2 size={18} className="mr-2" /> Share
                     </Button>
                 </div>
             </div>
 
-            {/* Invoice Container - White Paper Style */}
-            <div id="invoice-preview" className="bg-white text-gray-900 p-8 md:p-12 rounded-lg shadow-lg max-w-4xl mx-auto print:shadow-none print:w-full print:max-w-none">
-                {/* Header */}
-                <div className="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
-                    <div>
-                        <img src="/gym_logo.png" alt="Atlas Fitness" className="w-40 h-auto object-contain mb-2" />
-                        <h1 className="text-4xl font-black tracking-tighter uppercase">
-                            <span className="text-black">Atlas Fitness</span>
-                            <span className="text-red-600 ml-2">Elite</span>
-                        </h1>
-                        <h2 className="text-lg font-semibold mt-2 text-gray-700 italic">Premium Fitness Management</h2>
-                        <div className="text-sm text-gray-500 mt-1">
-                            <p>3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
-                            <p>+91 99882 29441, +91 83175 29757 | info@atlasfitness.com</p>
+            {/* ─── INVOICE PAPER ─── */}
+            <div
+                id="invoice-preview"
+                style={{
+                    background: '#fff',
+                    maxWidth: '820px',
+                    margin: '0 auto',
+                    boxShadow: '0 4px 32px rgba(0,0,0,0.13)',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    color: '#1a1a1a',
+                }}
+            >
+                {/* ── TOP RED ACCENT BAR ── */}
+                <div style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '7px' }} />
+
+                {/* ── INNER CONTENT WITH MARGINS ── */}
+                <div style={{ padding: '40px 48px' }}>
+
+                    {/* ── HEADER: Logo + Title ── */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '36px' }}>
+                        {/* Left: Brand */}
+                        <div>
+                            <img src="/gym_logo.png" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
+                            <div style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+                                <span style={{ color: '#111' }}>ATLAS</span>
+                                <span style={{ color: '#c0001a', marginLeft: '6px' }}>FITNESS</span>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#888', marginTop: '6px', lineHeight: '1.6' }}>
+                                <div>3-4-98/4/204, New Narsina Nagar, Mallapur,</div>
+                                <div>Hyderabad, Telangana – 500076</div>
+                                <div style={{ marginTop: '2px' }}>📞 +91 99882 29441 &nbsp;|&nbsp; +91 83175 29757</div>
+                                <div>✉ info@atlasfitness.com</div>
+                            </div>
+                        </div>
+
+                        {/* Right: Invoice Meta */}
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '32px', fontWeight: '900', color: '#c0001a', letterSpacing: '2px' }}>INVOICE</div>
+                            <div style={{ fontSize: '14px', color: '#555', marginTop: '4px', fontWeight: '600' }}>
+                                # {invoice.invoiceNumber}
+                            </div>
+                            <div style={{ marginTop: '16px', fontSize: '12px', color: '#555' }}>
+                                <table style={{ borderCollapse: 'collapse', marginLeft: 'auto' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td style={{ paddingRight: '12px', paddingBottom: '4px', color: '#888' }}>Invoice Date</td>
+                                            <td style={{ fontWeight: '600', color: '#222', textAlign: 'right' }}>{formatDate(invoice.createdAt)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style={{ paddingRight: '12px', paddingBottom: '4px', color: '#888' }}>Valid Upto</td>
+                                            <td style={{ fontWeight: '600', color: '#222', textAlign: 'right' }}>{formatDate(invoice.dueDate)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style={{ paddingRight: '12px', color: '#888' }}>Status</td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <span style={{
+                                                    background: statusColor.bg,
+                                                    color: statusColor.text,
+                                                    padding: '2px 10px',
+                                                    borderRadius: '20px',
+                                                    fontWeight: '700',
+                                                    fontSize: '11px',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.5px',
+                                                }}>
+                                                    {invoice.paymentStatus}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <h3 className="text-xl font-bold text-gray-800">INVOICE</h3>
-                        <p className="text-gray-500 text-sm mt-1">#{invoice.invoiceNumber}</p>
-                        <div className="mt-4 text-sm">
-                            <div className="flex justify-between gap-4">
-                                <span className="text-gray-600">Date:</span>
-                                <span className="font-medium">{formatDate(invoice.createdAt)}</span>
+
+                    {/* ── DIVIDER ── */}
+                    <div style={{ borderTop: '2px solid #f0f0f0', marginBottom: '28px' }} />
+
+                    {/* ── BILL TO ── */}
+                    <div style={{ marginBottom: '28px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: '800', color: '#c0001a', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            Bill To
+                        </div>
+                        <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderLeft: '4px solid #c0001a', borderRadius: '6px', padding: '14px 18px' }}>
+                            <div style={{ fontSize: '17px', fontWeight: '800', color: '#111', marginBottom: '4px' }}>
+                                {invoice.member?.name || 'Unknown Member'}
                             </div>
-                            <div className="flex justify-between gap-4 mt-1">
-                                <span className="text-gray-600">Due Date:</span>
-                                <span className="font-medium">{formatDate(invoice.dueDate)}</span>
+                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '12px', color: '#555', marginTop: '4px' }}>
+                                <span><b style={{ color: '#333' }}>Member ID:</b> {invoice.member?.memberId || invoice.memberId}</span>
+                                {invoice.member?.phone && <span><b style={{ color: '#333' }}>Phone:</b> {invoice.member.phone}</span>}
+                                {invoice.member?.email && <span><b style={{ color: '#333' }}>Email:</b> {invoice.member.email}</span>}
                             </div>
-                            <div className="flex justify-between gap-4 mt-1">
-                                <span className="text-gray-600">Status:</span>
-                                <span className={`font-medium px-2 py-0.5 rounded text-xs uppercase ${invoice.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                                    invoice.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                                    }`}>
-                                    {invoice.paymentStatus}
+                        </div>
+                    </div>
+
+                    {/* ── LINE ITEMS TABLE ── */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '13px' }}>
+                        <thead>
+                            <tr style={{ background: '#1a1a1a', color: '#fff' }}>
+                                <th style={{ textAlign: 'left', padding: '11px 16px', fontWeight: '700', letterSpacing: '0.5px', borderRadius: '4px 0 0 4px' }}>
+                                    Description
+                                </th>
+                                <th style={{ textAlign: 'center', padding: '11px 16px', fontWeight: '700', letterSpacing: '0.5px', width: '120px' }}>
+                                    Duration
+                                </th>
+                                <th style={{ textAlign: 'right', padding: '11px 16px', fontWeight: '700', letterSpacing: '0.5px', width: '140px', borderRadius: '0 4px 4px 0' }}>
+                                    Amount
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style={{ background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+                                <td style={{ padding: '14px 16px' }}>
+                                    <div style={{ fontWeight: '700', color: '#111', marginBottom: '3px' }}>
+                                        Gym Membership — {invoice.plan?.name || 'Standard Plan'}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#888' }}>
+                                        Period: {formatDate(invoice.createdAt)} &nbsp;→&nbsp; {formatDate(invoice.dueDate)}
+                                    </div>
+                                </td>
+                                <td style={{ padding: '14px 16px', textAlign: 'center', color: '#555' }}>
+                                    {invoice.plan?.duration || 1} Month{(invoice.plan?.duration || 1) > 1 ? 's' : ''}
+                                </td>
+                                <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '700', color: '#111' }}>
+                                    {formatCurrency(invoice.amount)}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {/* ── TOTALS ── */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '36px' }}>
+                        <div style={{ width: '280px', background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '8px', padding: '16px 20px', fontSize: '13px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#555' }}>
+                                <span>Plan Price</span>
+                                <span style={{ fontWeight: '600', color: '#222' }}>
+                                    {formatCurrency(invoice.discountType === 'PERCENTAGE'
+                                        ? (invoice.amount / (1 - (invoice.discount / 100)))
+                                        : (invoice.amount + (invoice.discount || 0)))}
                                 </span>
                             </div>
+                            {invoice.discount > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#16a34a' }}>
+                                    <span>
+                                        Discount {invoice.discountType === 'PERCENTAGE' && `(${invoice.discount}%)`}
+                                    </span>
+                                    <span style={{ fontWeight: '600' }}>
+                                        − {formatCurrency(invoice.discountType === 'PERCENTAGE'
+                                            ? ((invoice.amount / (1 - (invoice.discount / 100))) * invoice.discount / 100)
+                                            : invoice.discount)}
+                                    </span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#555', borderTop: '1px dashed #ddd', paddingTop: '8px' }}>
+                                <span>Taxable Value</span>
+                                <span style={{ fontWeight: '600', color: '#222' }}>{formatCurrency(invoice.amount)}</span>
+                            </div>
+                            {invoice.gstAmount > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#555' }}>
+                                    <span>GST (18%)</span>
+                                    <span style={{ fontWeight: '600', color: '#222' }}>{formatCurrency(invoice.gstAmount)}</span>
+                                </div>
+                            )}
+                            {invoice.lateFee > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#dc2626' }}>
+                                    <span>Late Fee</span>
+                                    <span style={{ fontWeight: '600' }}>{formatCurrency(invoice.lateFee)}</span>
+                                </div>
+                            )}
+                            {/* Total Row */}
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between',
+                                borderTop: '2px solid #1a1a1a', paddingTop: '10px', marginTop: '4px',
+                                fontWeight: '800', fontSize: '16px',
+                            }}>
+                                <span style={{ color: '#111' }}>Total Payable</span>
+                                <span style={{ color: '#c0001a' }}>{formatCurrency(invoice.totalAmount)}</span>
+                            </div>
+                            {invoice.paymentStatus === 'PAID' && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: '#16a34a', fontSize: '12px', fontWeight: '700' }}>
+                                    <span>✔ Amount Paid</span>
+                                    <span>{formatCurrency(invoice.totalAmount)}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
 
-                {/* Bill To */}
-                <div className="mb-12">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">BILL TO:</h3>
-                    <div className="text-gray-800">
-                        <p className="text-xl font-bold">{invoice.member?.name || 'Unknown Member'}</p>
-                        <p className="text-sm font-semibold text-red-600">{invoice.member?.memberId || invoice.memberId}</p>
-                        <p className="text-sm text-gray-500">{invoice.member?.phone}</p>
-                        <p className="text-sm text-gray-500">{invoice.member?.email}</p>
-                    </div>
-                </div>
-
-                {/* Line Items */}
-                <table className="w-full mb-8">
-                    <thead>
-                        <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 text-sm font-bold text-gray-600 uppercase tracking-wider">Description</th>
-                            <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase tracking-wider">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr className="border-b border-gray-100">
-                            <td className="py-4">
-                                <p className="font-medium text-gray-800">{invoice.plan?.duration || 1} Months Gym Membership</p>
-                                <p className="text-sm text-gray-500">Plan: {invoice.plan?.name}</p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {formatDate(invoice.createdAt)} - {formatDate(invoice.dueDate)}
-                                </p>
-                            </td>
-                            <td className="py-4 text-right font-medium text-gray-800">
-                                {formatCurrency(invoice.amount)}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                {/* Totals */}
-                <div className="flex justify-end mb-12">
-                    <div className="w-64 space-y-3">
-                        <div className="flex justify-between text-sm text-gray-600">
-                            <span>Plan Price:</span>
-                            <span>{formatCurrency(invoice.discountType === 'PERCENTAGE' ? (invoice.amount / (1 - (invoice.discount / 100))) : (invoice.amount + (invoice.discount || 0)))}</span>
+                    {/* ── MEMBERSHIP TERMS & GYM RULES ── */}
+                    <div style={{ borderTop: '2.5px solid #1a1a1a', paddingTop: '22px', marginBottom: '28px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '3px', color: '#111', textTransform: 'uppercase' }}>
+                                ATLAS FITNESS
+                            </div>
+                            <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '2px', color: '#c0001a', textTransform: 'uppercase', marginTop: '3px' }}>
+                                Membership Terms &amp; Gym Rules
+                            </div>
                         </div>
-                        {invoice.discount > 0 && (
-                            <div className="flex justify-between text-sm text-green-600">
-                                <span>Discount {invoice.discountType === 'PERCENTAGE' && `(${invoice.discount}%)`}:</span>
-                                <span>- {formatCurrency(invoice.discountType === 'PERCENTAGE' ? ((invoice.amount / (1 - (invoice.discount / 100))) * invoice.discount / 100) : invoice.discount)}</span>
-                            </div>
-                        )}
-                        <div className="flex justify-between text-sm text-gray-800 font-medium pt-2 border-t border-dashed border-gray-200">
-                            <span>Taxable Value:</span>
-                            <span>{formatCurrency(invoice.amount)}</span>
+
+                        {/* 2-column grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 28px', fontSize: '10.5px', color: '#444', lineHeight: '1.6' }}>
+                            {[
+                                { n: '1', label: 'General', text: 'Members must follow all gym policies, maintain discipline, and use equipment responsibly. Entry is allowed only with a valid membership. Proper gym attire and shoes are mandatory.' },
+                                { n: '2', label: 'Equipment', text: 'Re-rack weights, dumbbells, and plates after use. Avoid dropping equipment. Machines must be used correctly and any damage must be reported immediately. Share equipment during peak hours.' },
+                                { n: '3', label: 'Hygiene', text: 'Maintain strict hygiene. Carry a personal towel, wipe machines after use, and keep the gym clean. Dispose of waste properly and avoid leaving sweat on benches or machines.' },
+                                { n: '4', label: 'Safety', text: 'Always warm up and cool down. Use proper techniques and seek trainer guidance when needed. Avoid lifting beyond your capacity without assistance. The gym is not responsible for injuries due to negligence.' },
+                                { n: '5', label: 'Conduct', text: 'Respect all members and staff. No fighting, arguments, abusive language, or misconduct will be tolerated. Any violation may result in immediate termination of membership without refund.' },
+                                { n: '6', label: 'Belongings & Fees', text: 'Store belongings in lockers. Management is not responsible for any loss or damage. Membership fees are non-refundable and non-transferable. No extensions or pauses unless approved by management.' },
+                            ].map(({ n, label, text }) => (
+                                <div key={n} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                    <div style={{
+                                        minWidth: '20px', height: '20px',
+                                        background: '#c0001a', color: '#fff',
+                                        borderRadius: '50%', fontSize: '9px',
+                                        fontWeight: '800', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, marginTop: '1px',
+                                    }}>{n}</div>
+                                    <div>
+                                        <span style={{ fontWeight: '800', color: '#111' }}>{label}: </span>
+                                        {text}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        {invoice.gstAmount > 0 && (
-                            <div className="flex justify-between text-sm text-gray-600">
-                                <span>Tax (18%):</span>
-                                <span>{formatCurrency(invoice.gstAmount)}</span>
-                            </div>
-                        )}
-                        {invoice.lateFee > 0 && (
-                            <div className="flex justify-between text-sm text-red-500">
-                                <span>Late Fee:</span>
-                                <span>{formatCurrency(invoice.lateFee)}</span>
-                            </div>
-                        )}
-                        <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
-                            <span className="text-black">Total Payable:</span>
-                            <span className="text-red-700">{formatCurrency(invoice.totalAmount)}</span>
-                        </div>
-                        {invoice.paymentStatus === 'PAID' && (
-                            <div className="flex justify-between text-sm text-green-600 font-medium">
-                                <span>Paid:</span>
-                                <span>{formatCurrency(invoice.totalAmount)}</span>
-                            </div>
-                        )}
                     </div>
+
+                    {/* ── FOOTER ── */}
+                    <div style={{ borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: '11.5px', color: '#555', maxWidth: '320px' }}>
+                            <div style={{ fontWeight: '700', color: '#333', marginBottom: '4px' }}>Note:</div>
+                            <div>Thank you for choosing <b>Atlas Fitness</b>! Stay strong and keep pushing! 💪</div>
+                            {invoice.razorpayPaymentId && (
+                                <div style={{ marginTop: '8px', fontSize: '10px', color: '#888' }}>
+                                    Transaction ID: <span style={{ fontFamily: 'monospace' }}>{invoice.razorpayPaymentId}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ height: '52px', width: '130px', borderBottom: '1.5px solid #555', marginBottom: '6px' }}></div>
+                            <div style={{ fontSize: '10px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                                Authorized Signatory
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                {/* Footer */}
-                <div className="border-t border-gray-200 pt-8 flex justify-between items-end">
-                    <div className="text-sm text-gray-500 max-w-sm">
-                        <p className="font-medium text-gray-700 mb-1">Notes:</p>
-                        <p>Thank you for your business!</p>
-                        {invoice.razorpayPaymentId && (
-                            <p className="mt-2 text-xs">Transaction ID: {invoice.razorpayPaymentId}</p>
-                        )}
-                    </div>
-                    <div className="text-center">
-                        <div className="h-16 w-32 mb-2"></div> {/* Signature Placeholder */}
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Authorized Signatory</p>
-                    </div>
-                </div>
+                {/* ── BOTTOM RED ACCENT BAR ── */}
+                <div style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '5px' }} />
             </div>
+
+            {/* Print Styles */}
+            <style>{`
+                @media print {
+                    body { margin: 0; padding: 0; background: #fff; }
+                    #invoice-preview {
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                    }
+                    .print\\:hidden { display: none !important; }
+                    @page { margin: 0.5cm; size: A4; }
+                }
+            `}</style>
         </div>
     );
 };

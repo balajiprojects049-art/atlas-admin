@@ -141,7 +141,7 @@ function buildInvoiceHTML(invoice) {
   <div class="content">
 
     <!-- HEADER -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
       <!-- Left: Brand -->
       <div>
         ${logoBase64 ? `<img src="${logoBase64}" style="width:90px;height:auto;object-fit:contain;display:block;margin-bottom:8px;" />` : ''}
@@ -183,10 +183,10 @@ function buildInvoiceHTML(invoice) {
     </div>
 
     <!-- DIVIDER -->
-    <div style="border-top:2px solid #f0f0f0;margin-bottom:22px;"></div>
+    <div style="border-top:2px solid #f0f0f0;margin-bottom:16px;"></div>
 
     <!-- BILL TO -->
-    <div style="margin-bottom:22px;">
+    <div style="margin-bottom:16px;">
       <div style="font-size:9px;font-weight:800;color:#c0001a;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;">BILL TO</div>
       <div style="background:#fafafa;border:1px solid #f0f0f0;border-left:4px solid #c0001a;border-radius:6px;padding:12px 16px;">
         <div style="font-size:17px;font-weight:800;color:#111;margin-bottom:5px;">${(invoice.member && invoice.member.name) ? invoice.member.name : 'Unknown Member'}</div>
@@ -205,7 +205,7 @@ function buildInvoiceHTML(invoice) {
     </div>
 
     <!-- LINE ITEMS TABLE -->
-    <table style="width:100%;margin-bottom:18px;font-size:12px;">
+    <table style="width:100%;margin-bottom:12px;font-size:12px;">
       <thead>
         <tr style="background:#1a1a1a;color:#fff;">
           <th style="text-align:left;padding:10px 14px;font-weight:700;letter-spacing:0.4px;border-radius:4px 0 0 4px;">Description</th>
@@ -234,8 +234,16 @@ function buildInvoiceHTML(invoice) {
     </table>
 
     <!-- TOTALS -->
-    <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
-      <div style="width:270px;background:#fafafa;border:1px solid #ebebeb;border-radius:8px;padding:14px 18px;font-size:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px;gap:20px;">
+      <!-- AMOUNT IN WORDS BOX -->
+      <div style="width:360px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #334155;border-radius:6px;padding:12px 16px;margin-bottom:10px;">
+          <div style="font-size:9px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">TOTAL AMOUNT (IN WORDS)</div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b;text-transform:capitalize;">
+              ${numberToWords(Math.round(invoice.totalAmount))}
+          </div>
+      </div>
+
+      <div style="width:280px;background:#fafafa;border:1px solid #ebebeb;border-radius:8px;padding:14px 18px;font-size:12px;">
         <table style="width:100%;">
           <tr>
             <td style="padding:6px 0;color:#555;">Plan Price</td>
@@ -255,18 +263,13 @@ function buildInvoiceHTML(invoice) {
             <td style="padding:4px 0;font-size:15px;font-weight:800;color:#c0001a;text-align:right;">${formatCurrency(invoice.totalAmount)}</td>
           </tr>
           ${paidRow}
-          <tr>
-            <td colspan="2" style="padding-top:10px;text-align:right;font-size:10px;font-style:italic;color:#666;">
-              ${numberToWords(Math.round(invoice.totalAmount))}
-            </td>
-          </tr>
         </table>
       </div>
     </div>
 
     <!-- MEMBERSHIP TERMS -->
-    <div style="border-top:2.5px solid #1a1a1a;padding-top:20px;margin-bottom:24px;">
-      <div style="text-align:center;margin-bottom:14px;">
+    <div style="border-top:2.5px solid #1a1a1a;padding-top:16px;margin-bottom:20px;">
+      <div style="text-align:center;margin-bottom:10px;">
         <div style="font-size:14px;font-weight:900;letter-spacing:3px;color:#111;text-transform:uppercase;">ATLAS FITNESS</div>
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#c0001a;text-transform:uppercase;margin-top:3px;">Membership Terms &amp; Gym Rules</div>
       </div>
@@ -319,7 +322,6 @@ async function generateInvoicePDF(invoice) {
       height: `${bodyHeight + 2}px`,   // +2px to avoid any rounding cut-off
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      pageRanges: '1',                 // Only generate page 1 as a safety net
     });
 
     return pdfBuffer;

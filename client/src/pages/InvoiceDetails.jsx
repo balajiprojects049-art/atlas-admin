@@ -146,14 +146,18 @@ const InvoiceDetails = () => {
                     color: '#1a1a1a',
                 }}
             >
-                {/* ── TOP RED ACCENT BAR ── */}
-                <div style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '7px' }} />
+                {/* ── PRINT ONLY BARS (Repeats on every page) ── */}
+                <div className="print-header-bar" style={{ display: 'none', background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '7px' }} />
+                <div className="print-footer-bar" style={{ display: 'none', background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '5px' }} />
+
+                {/* ── TOP RED ACCENT BAR (Web Only) ── */}
+                <div className="print:hidden" style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '7px' }} />
 
                 {/* ── INNER CONTENT WITH MARGINS ── */}
-                <div style={{ padding: '40px 48px' }}>
+                <div className="invoice-content" style={{ padding: '40px 48px' }}>
 
                     {/* ── HEADER: Logo + Title ── */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '36px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                         {/* Left: Brand */}
                         <div>
                             <img src="/atlas_logo.png" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
@@ -214,7 +218,7 @@ const InvoiceDetails = () => {
                     <div style={{ borderTop: '2px solid #f0f0f0', marginBottom: '28px' }} />
 
                     {/* ── BILL TO ── */}
-                    <div style={{ marginBottom: '28px' }}>
+                    <div style={{ marginBottom: '18px' }}>
                         <div style={{ fontSize: '10px', fontWeight: '800', color: '#c0001a', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
                             Bill To
                         </div>
@@ -242,7 +246,7 @@ const InvoiceDetails = () => {
                     </div>
 
                     {/* ── LINE ITEMS TABLE ── */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '13px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '13px' }}>
                         <thead>
                             <tr style={{ background: '#1a1a1a', color: '#fff' }}>
                                 <th style={{ textAlign: 'left', padding: '11px 16px', fontWeight: '700', letterSpacing: '0.5px', borderRadius: '4px 0 0 4px' }}>
@@ -277,7 +281,7 @@ const InvoiceDetails = () => {
                     </table>
 
                     {/* ── TOTALS ── */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px', marginBottom: '36px' }}>
 
                         {/* AMOUNT IN WORDS BOX */}
                         <div style={{ width: '380px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #334155', borderRadius: '6px', padding: '12px 16px', marginBottom: '8px' }}>
@@ -343,8 +347,8 @@ const InvoiceDetails = () => {
                     </div>
 
                     {/* ── MEMBERSHIP TERMS & GYM RULES ── */}
-                    <div style={{ borderTop: '2.5px solid #1a1a1a', paddingTop: '22px', marginBottom: '28px' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                    <div className="rules-container" style={{ borderTop: '2.5px solid #1a1a1a', paddingTop: '16px', marginBottom: '18px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
                             <div style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '3px', color: '#111', textTransform: 'uppercase' }}>
                                 ATLAS FITNESS
                             </div>
@@ -402,22 +406,66 @@ const InvoiceDetails = () => {
 
                 </div>
 
-                {/* ── BOTTOM RED ACCENT BAR ── */}
-                <div style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '5px' }} />
+                {/* ── BOTTOM RED ACCENT BAR (Web Only) ── */}
+                <div className="print:hidden" style={{ background: 'linear-gradient(90deg,#c0001a,#e8002a)', height: '5px' }} />
             </div>
 
             {/* Print Styles */}
             <style>{`
                 @media print {
-                    body { margin: 0; padding: 0; background: #fff; }
+                    @page { 
+                        margin: 0; 
+                        size: A4; 
+                    }
+                    body { 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #fff !important;
+                        -webkit-print-color-adjust: exact; 
+                        print-color-adjust: exact;
+                    }
                     #invoice-preview {
                         box-shadow: none !important;
                         border-radius: 0 !important;
-                        max-width: 100% !important;
+                        width: 100% !important;
                         margin: 0 !important;
+                        padding: 0 !important;
+                        height: auto !important;
+                    }
+                    .invoice-content {
+                        padding: 36px 44px !important;
+                        zoom: 1;
                     }
                     .print\\:hidden { display: none !important; }
-                    @page { margin: 0.5cm; size: A4; }
+                    
+                    /* Force terms to page 2 */
+                    .rules-container {
+                        page-break-before: always;
+                        border-top: none !important;
+                        padding-top: 50px !important;
+                        margin-top: 0 !important;
+                        margin-bottom: 30px !important;
+                    }
+
+                    /* Repeat red bars on every page */
+                    .print-header-bar {
+                        display: block !important;
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 7px;
+                        z-index: 9999;
+                    }
+                    .print-footer-bar {
+                        display: block !important;
+                        position: fixed;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        height: 5px;
+                        z-index: 9999;
+                    }
                 }
             `}</style>
         </div>

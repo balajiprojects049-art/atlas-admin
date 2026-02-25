@@ -11,12 +11,38 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function numberToWords(num) {
+  if (num === 0) return 'Zero Rupees Only';
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const inWords = (n) => {
+    if ((n = n.toString()).length > 9) return 'overflow';
+    let nArray = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!nArray) return;
+    let str = '';
+    str += (nArray[1] != 0) ? (a[Number(nArray[1])] || b[nArray[1][0]] + ' ' + a[nArray[1][1]]) + 'Crore ' : '';
+    str += (nArray[2] != 0) ? (a[Number(nArray[2])] || b[nArray[2][0]] + ' ' + a[nArray[2][1]]) + 'Lakh ' : '';
+    str += (nArray[3] != 0) ? (a[Number(nArray[3])] || b[nArray[3][0]] + ' ' + a[nArray[3][1]]) + 'Thousand ' : '';
+    str += (nArray[4] != 0) ? (a[Number(nArray[4])] || b[nArray[4][0]] + ' ' + a[nArray[4][1]]) + 'Hundred ' : '';
+    str += (nArray[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(nArray[5])] || b[nArray[5][0]] + ' ' + a[nArray[5][1]]) : '';
+    return str.trim();
+  };
+  const strNum = num.toString().split('.');
+  let rupees = inWords(parseInt(strNum[0]));
+  let paise = '';
+  if (strNum[1] && parseInt(strNum[1]) > 0) {
+    const decimalPart = strNum[1].padEnd(2, '0').substring(0, 2);
+    paise = ' and ' + inWords(parseInt(decimalPart)) + ' Paise';
+  }
+  return rupees + ' Rupees' + paise + ' Only';
+}
+
 function buildInvoiceHTML(invoice) {
-  const logoPath = path.join(__dirname, '../../client/public/gym_logo.png');
+  const logoPath = path.join(__dirname, '../../client/public/atlas_logo.jpeg');
   let logoBase64 = '';
   if (fs.existsSync(logoPath)) {
     const imgBuffer = fs.readFileSync(logoPath);
-    logoBase64 = `data:image/png;base64,${imgBuffer.toString('base64')}`;
+    logoBase64 = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
   }
 
   const statusColors = {
@@ -127,6 +153,7 @@ function buildInvoiceHTML(invoice) {
           <div>Hyderabad, Telangana – 500076</div>
           <div>📞 +91 99882 29441 &nbsp;|&nbsp; +91 83175 29757</div>
           <div>✉ info@atlasfitness.com</div>
+          <div style="font-weight:700;color:#444;margin-top:4px;">GSTIN: 36BNEPV0615C1ZA &nbsp;|&nbsp; HSN: 9506</div>
         </div>
       </div>
       <!-- Right: Invoice label -->
@@ -168,6 +195,12 @@ function buildInvoiceHTML(invoice) {
           ${(invoice.member && invoice.member.phone) ? `<span><b style="color:#333;">Phone:</b> ${invoice.member.phone}</span>` : ''}
           ${(invoice.member && invoice.member.email) ? `<span><b style="color:#333;">Email:</b> ${invoice.member.email}</span>` : ''}
         </div>
+        ${(invoice.memberGstNumber || invoice.memberPanNumber) ? `
+        <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:11px;color:#555;margin-top:6px;">
+          ${invoice.memberGstNumber ? `<span><b style="color:#333;">GSTIN:</b> ${invoice.memberGstNumber}</span>` : ''}
+          ${invoice.memberPanNumber ? `<span><b style="color:#333;">PAN:</b> ${invoice.memberPanNumber}</span>` : ''}
+        </div>` : ''}
+        ${invoice.memberAddress ? `<div style="font-size:11px;color:#555;margin-top:6px;"><b style="color:#333;">Address:</b> ${invoice.memberAddress}</div>` : ''}
       </div>
     </div>
 
@@ -222,6 +255,11 @@ function buildInvoiceHTML(invoice) {
             <td style="padding:4px 0;font-size:15px;font-weight:800;color:#c0001a;text-align:right;">${formatCurrency(invoice.totalAmount)}</td>
           </tr>
           ${paidRow}
+          <tr>
+            <td colspan="2" style="padding-top:10px;text-align:right;font-size:10px;font-style:italic;color:#666;">
+              ${numberToWords(Math.round(invoice.totalAmount))}
+            </td>
+          </tr>
         </table>
       </div>
     </div>

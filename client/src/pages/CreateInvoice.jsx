@@ -4,7 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Input, Select } from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { memberAPI, invoiceAPI, analyticsAPI, paymentAPI, planAPI } from '../services/api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, numberToWords } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { Printer, Share2, Download, Mail } from 'lucide-react'; // Assuming lucide-react or generic icons
 // If lucide-react not available, I'll use text or standard emojis/svgs.
@@ -24,6 +24,9 @@ const CreateInvoice = () => {
         memberName: '',
         memberEmail: '',
         memberPhone: '',
+        memberGstNumber: '',
+        memberPanNumber: '',
+        memberAddress: '',
         planId: '',
         planName: '',
         trainerName: '', // Optional, not in DB yet
@@ -157,6 +160,9 @@ const CreateInvoice = () => {
                 memberName: member.name,
                 memberEmail: member.email,
                 memberPhone: member.phone,
+                memberGstNumber: member.gstNumber || '',
+                memberPanNumber: member.panNumber || '',
+                memberAddress: member.address || '',
                 planId: member.planId || '',
                 planName: member.plan?.name || '',
                 amount: member.plan?.price || '',
@@ -340,6 +346,9 @@ const CreateInvoice = () => {
                 razorpayPaymentId: formData.transactionId, // Store Transaction ID if manual
                 discount: parseFloat(formData.discount),
                 discountType: formData.discountType,
+                memberGstNumber: formData.memberGstNumber, // Send B2B GST 
+                memberPanNumber: formData.memberPanNumber, // Send PAN
+                memberAddress: formData.memberAddress, // Send Address
             };
 
             const response = await invoiceAPI.create(payload);
@@ -387,7 +396,7 @@ const CreateInvoice = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <Select
-                                label="Plan"
+                                label="Plan *"
                                 name="planId"
                                 value={formData.planId}
                                 onChange={handlePlanChange}
@@ -396,6 +405,16 @@ const CreateInvoice = () => {
                             />
                             <Input label="Trainer Name (Optional)" name="trainerName" value={formData.trainerName} onChange={handleChange} placeholder="Enter Name" />
                         </div>
+                    </Card>
+
+                    {/* Member Tax & Address Details */}
+                    <Card className="p-4 space-y-4">
+                        <h3 className="font-semibold text-lg border-b pb-2">Member Tax Details</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="Member's GST Number (Optional)" name="memberGstNumber" value={formData.memberGstNumber} onChange={handleChange} placeholder="Enter GST for B2B Invoice" />
+                            <Input label="Member's PAN Number (Optional)" name="memberPanNumber" value={formData.memberPanNumber} onChange={handleChange} placeholder="Enter PAN Number" />
+                        </div>
+                        <Input label="Member's Address (Optional)" name="memberAddress" value={formData.memberAddress} onChange={handleChange} placeholder="Enter Full Address" />
                     </Card>
 
                     {/* Invoice Details */}
@@ -515,13 +534,13 @@ const CreateInvoice = () => {
                         {/* Header */}
                         <div className="flex justify-between items-start border-b pb-6 mb-6">
                             <div>
-                                <img src="/gym_logo.png" alt="Logo" className="w-40 h-auto object-contain mb-2" />
+                                <img src="/atlas_logo.jpeg" alt="Logo" className="w-40 h-auto object-contain mb-2" />
                                 <h1 className="text-3xl font-black uppercase tracking-wide">
                                     <span className="text-black">Atlas Fitness</span> <span className="text-red-600">Elite</span>
                                 </h1>
                                 <p className="text-gray-500">3-4-98/4/204, New Narsina Nagar, Mallapur, Hyderabad, Telangana 500076</p>
                                 <p className="text-gray-500">+91 99882 29441, +91 83175 29757 | info@atlasfitness.com</p>
-                                <p className="text-gray-500 font-medium">GSTIN: 36BNEPV0615C1ZA</p>
+                                <p className="text-gray-500 font-medium">GSTIN: 36BNEPV0615C1ZA | HSN: 9506</p>
                             </div>
                             <div className="text-right">
                                 <h2 className="text-xl font-bold text-gray-700">INVOICE</h2>
@@ -538,6 +557,15 @@ const CreateInvoice = () => {
                             <p className="text-gray-600">{formData.memberId}</p>
                             <p className="text-gray-600">{formData.memberPhone}</p>
                             <p className="text-gray-600">{formData.memberEmail}</p>
+
+                            {(formData.memberGstNumber || formData.memberPanNumber) && (
+                                <div className="mt-2 text-gray-700">
+                                    {formData.memberGstNumber && <p className="font-semibold text-sm">GSTIN: {formData.memberGstNumber}</p>}
+                                    {formData.memberPanNumber && <p className="font-semibold text-sm">PAN: {formData.memberPanNumber}</p>}
+                                </div>
+                            )}
+
+                            {formData.memberAddress && <p className="text-gray-600 mt-1 text-sm">{formData.memberAddress}</p>}
                         </div>
 
                         {/* Table */}
@@ -606,12 +634,20 @@ const CreateInvoice = () => {
                             </div>
                         </div>
 
-                        {/* Footer Notes */}
-                        <div className="mt-12 pt-6 border-t border-gray-200 text-gray-500 text-xs">
-                            <p className="font-semibold mb-1">Notes:</p>
-                            <p>{formData.notes || 'Thank you for your business!'}</p>
-                            <p className="mt-4 text-center">Authorized Signatory</p>
+                        {/* Amount in Words Box */}
+                        <div className="mt-6 w-full border border-gray-200 bg-gray-50 p-4 rounded-md">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Amount in Words:</p>
+                            <p className="text-sm font-semibold text-gray-800 capitalize">
+                                {numberToWords(Math.round(formData.totalAmount))}
+                            </p>
                         </div>
+                    </div>
+
+                    {/* Footer Notes */}
+                    <div className="mt-12 pt-6 border-t border-gray-200 text-gray-500 text-xs">
+                        <p className="font-semibold mb-1">Notes:</p>
+                        <p>{formData.notes || 'Thank you for your business!'}</p>
+                        <p className="mt-4 text-center">Authorized Signatory</p>
                     </div>
                 </div>
             </div>

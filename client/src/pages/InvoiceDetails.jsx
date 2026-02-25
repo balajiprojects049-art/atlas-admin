@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { invoiceAPI } from '../services/api';
 import Button from '../components/ui/Button';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, numberToWords } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { Printer, ArrowLeft, Download, Share2, Loader2 } from 'lucide-react';
 
@@ -151,7 +151,7 @@ const InvoiceDetails = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '36px' }}>
                         {/* Left: Brand */}
                         <div>
-                            <img src="/gym_logo.png" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
+                            <img src="/atlas_logo.jpeg" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
                             <div style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
                                 <span style={{ color: '#111' }}>ATLAS</span>
                                 <span style={{ color: '#c0001a', marginLeft: '6px' }}>FITNESS</span>
@@ -161,6 +161,7 @@ const InvoiceDetails = () => {
                                 <div>Hyderabad, Telangana – 500076</div>
                                 <div style={{ marginTop: '2px' }}>📞 +91 99882 29441 &nbsp;|&nbsp; +91 83175 29757</div>
                                 <div>✉ info@atlasfitness.com</div>
+                                <div style={{ fontWeight: '700', color: '#444', marginTop: '4px' }}>GSTIN: 36BNEPV0615C1ZA &nbsp;|&nbsp; HSN: 9506</div>
                             </div>
                         </div>
 
@@ -221,6 +222,17 @@ const InvoiceDetails = () => {
                                 {invoice.member?.phone && <span><b style={{ color: '#333' }}>Phone:</b> {invoice.member.phone}</span>}
                                 {invoice.member?.email && <span><b style={{ color: '#333' }}>Email:</b> {invoice.member.email}</span>}
                             </div>
+                            {(invoice.memberGstNumber || invoice.memberPanNumber) && (
+                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '12px', color: '#555', marginTop: '6px' }}>
+                                    {invoice.memberGstNumber && <span><b style={{ color: '#333' }}>GSTIN:</b> {invoice.memberGstNumber}</span>}
+                                    {invoice.memberPanNumber && <span><b style={{ color: '#333' }}>PAN:</b> {invoice.memberPanNumber}</span>}
+                                </div>
+                            )}
+                            {invoice.memberAddress && (
+                                <div style={{ fontSize: '12px', color: '#555', marginTop: '6px' }}>
+                                    <b style={{ color: '#333' }}>Address:</b> {invoice.memberAddress}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -260,7 +272,16 @@ const InvoiceDetails = () => {
                     </table>
 
                     {/* ── TOTALS ── */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '36px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px' }}>
+
+                        {/* AMOUNT IN WORDS BOX */}
+                        <div style={{ width: '380px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #334155', borderRadius: '6px', padding: '12px 16px', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>TOTAL AMOUNT (IN WORDS)</div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', textTransform: 'capitalize' }}>
+                                {numberToWords(Math.round(invoice.totalAmount))}
+                            </div>
+                        </div>
+
                         <div style={{ width: '280px', background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '8px', padding: '16px 20px', fontSize: '13px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#555' }}>
                                 <span>Plan Price</span>

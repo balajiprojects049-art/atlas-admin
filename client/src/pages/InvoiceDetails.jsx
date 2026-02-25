@@ -427,11 +427,15 @@ const InvoiceDetails = () => {
                         width: 100% !important;
                         margin: 0 !important;
                         padding: 0 !important;
-                        height: auto !important;
+                        height: 100vh !important;
+                        max-height: 100vh !important;
+                        overflow: hidden !important;
+                        page-break-inside: avoid !important;
                     }
                     .invoice-content {
-                        padding: 36px 44px !important;
-                        zoom: 1;
+                        padding: 24px 32px !important;
+                        transform: scale(0.96);
+                        transform-origin: top center;
                     }
                     .print\\:hidden { display: none !important; }
 

@@ -38,7 +38,7 @@ function numberToWords(num) {
 }
 
 function buildInvoiceHTML(invoice) {
-  const logoPath = path.join(__dirname, '../../client/public/atlas_logo.jpeg');
+  const logoPath = path.join(__dirname, '../../client/public/atlas_logo.png');
   let logoBase64 = '';
   if (fs.existsSync(logoPath)) {
     const imgBuffer = fs.readFileSync(logoPath);
@@ -152,7 +152,7 @@ function buildInvoiceHTML(invoice) {
           <div>3-4-98/4/204, New Narsina Nagar, Mallapur,</div>
           <div>Hyderabad, Telangana – 500076</div>
           <div>📞 +91 99882 29441 &nbsp;|&nbsp; +91 83175 29757</div>
-          <div>✉ info@atlasfitness.com</div>
+          <div>✉ atlasfitnesselite@gmail.com</div>
           <div style="font-weight:700;color:#444;margin-top:4px;">GSTIN: 36BNEPV0615C1ZA &nbsp;|&nbsp; HSN: 9506</div>
         </div>
       </div>
@@ -309,7 +309,7 @@ async function generateInvoicePDF(invoice) {
 
     // Set viewport to A4 width (794px at 96dpi)
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
     // Measure full content height so everything fits on one page
     const bodyHeight = await page.evaluate(() => document.body.scrollHeight);

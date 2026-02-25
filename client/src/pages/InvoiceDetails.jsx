@@ -46,12 +46,17 @@ const InvoiceDetails = () => {
         try {
             const response = await invoiceAPI.downloadPDF(id);
 
-            // Validate we got actual PDF data
-            if (!response.data || response.data.size === 0) {
+            let blob;
+            if (response.data instanceof Blob) {
+                blob = response.data;
+            } else {
+                blob = new Blob([response.data], { type: 'application/pdf' });
+            }
+
+            if (!blob || blob.size === 0) {
                 throw new Error('Empty PDF received');
             }
 
-            const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -151,7 +156,7 @@ const InvoiceDetails = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '36px' }}>
                         {/* Left: Brand */}
                         <div>
-                            <img src="/atlas_logo.jpeg" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
+                            <img src="/atlas_logo.png" alt="Atlas Fitness" style={{ width: '100px', height: 'auto', objectFit: 'contain', marginBottom: '10px', display: 'block' }} />
                             <div style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
                                 <span style={{ color: '#111' }}>ATLAS</span>
                                 <span style={{ color: '#c0001a', marginLeft: '6px' }}>FITNESS</span>
@@ -160,7 +165,7 @@ const InvoiceDetails = () => {
                                 <div>3-4-98/4/204, New Narsina Nagar, Mallapur,</div>
                                 <div>Hyderabad, Telangana – 500076</div>
                                 <div style={{ marginTop: '2px' }}>📞 +91 99882 29441 &nbsp;|&nbsp; +91 83175 29757</div>
-                                <div>✉ info@atlasfitness.com</div>
+                                <div>✉ atlasfitnesselite@gmail.com</div>
                                 <div style={{ fontWeight: '700', color: '#444', marginTop: '4px' }}>GSTIN: 36BNEPV0615C1ZA &nbsp;|&nbsp; HSN: 9506</div>
                             </div>
                         </div>

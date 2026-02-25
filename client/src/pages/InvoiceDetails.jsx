@@ -50,13 +50,14 @@ const InvoiceDetails = () => {
 
             // Ensure PDF is exactly 1 continuous page
             const pdfWidth = element.offsetWidth;
-            const pdfHeight = element.offsetHeight;
+            const pdfHeight = element.offsetHeight + 2; // small buffer to prevent fraction overflow
 
             const opt = {
                 margin: 0,
                 filename: `Invoice_${invoice.invoiceNumber}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
+                pagebreak: { mode: 'avoid-all' },
                 jsPDF: { unit: 'px', format: [pdfWidth, pdfHeight], orientation: 'portrait' }
             };
 

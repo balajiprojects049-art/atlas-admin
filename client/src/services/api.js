@@ -89,7 +89,7 @@ export const authAPI = {
 };
 
 export const memberAPI = {
-    getAll: () => api.get('/members'),
+    getAll: (params) => api.get('/members', { params }),
     getById: (id) => api.get(`/members/${id}`),
     create: (data) => api.post('/members', data),
     update: (id, data) => api.put(`/members/${id}`, data),
@@ -100,7 +100,7 @@ export const memberAPI = {
 };
 
 export const invoiceAPI = {
-    getAll: () => api.get('/invoices'),
+    getAll: (params) => api.get('/invoices', { params }),
     getById: (id) => api.get(`/invoices/${id}`),
     create: (data) => api.post('/invoices', data),
     update: (id, data) => api.put(`/invoices/${id}`, data),

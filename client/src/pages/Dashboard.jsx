@@ -26,28 +26,33 @@ const Dashboard = () => {
         try {
             setLoading(true);
 
-            // Fetch gym data
-            const [statsResponse, invoicesResponse] = await Promise.all([
+            // Fetch gym and cafeteria data concurrently
+            const [
+                statsResponse,
+                invoicesResponse,
+                cafeteriaStatsData,
+                recentOrdersData
+            ] = await Promise.all([
                 analyticsAPI.getDashboard(),
-                invoiceAPI.getAll({ limit: 5 })
+                invoiceAPI.getAll({ limit: 5 }),
+                getCafeteriaAnalytics(),
+                getAllOrders({ limit: 5 })
             ]);
 
-            if (statsResponse.data.success) {
+            if (statsResponse.data?.success) {
                 setStats(statsResponse.data.stats || {});
             }
 
-            if (invoicesResponse.data.success) {
+            if (invoicesResponse.data?.success) {
                 setRecentInvoices(invoicesResponse.data.invoices || []);
             }
 
-            // Fetch cafeteria data
-            const [cafeteriaStatsData, recentOrdersData] = await Promise.all([
-                getCafeteriaAnalytics(),
-                getAllOrders({ limit: 5 }) // Assuming getAllOrders supports limit, if not it fetches all, likely OK for now or I should check service
-            ]);
-
-            setCafeteriaStats(cafeteriaStatsData);
-            setRecentOrders(recentOrdersData.slice(0, 5)); // Client side slice if API doesn't support limit
+            setCafeteriaStats(cafeteriaStatsData || null);
+            if (recentOrdersData && Array.isArray(recentOrdersData)) {
+                setRecentOrders(recentOrdersData.slice(0, 5));
+            } else {
+                setRecentOrders([]);
+            }
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);

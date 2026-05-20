@@ -12,7 +12,7 @@ const PORT = 5000;
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running locally on http://localhost:${PORT}`);
-    // Optional: init cron jobs here
-    // const initCronJobs = require('./cron');
-    // initCronJobs();
+    // Initialize cron jobs
+    const initCronJobs = require('./cron');
+    initCronJobs();
 });

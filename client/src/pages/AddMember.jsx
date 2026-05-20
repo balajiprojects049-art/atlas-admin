@@ -305,7 +305,7 @@ const AddMember = () => {
                             placeholder="0.00"
                         />
                         <Input
-                            label="Start Date"
+                            label="Joining Date"
                             name="startDate"
                             type="date"
                             value={formData.startDate}

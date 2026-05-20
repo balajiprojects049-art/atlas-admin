@@ -8,53 +8,79 @@ const prisma = require('../config/db');
 // Get dashboard statistics
 router.get('/dashboard', authMiddleware, async (req, res) => {
     try {
-        // Total Revenue
-        const totalRevenue = await invoiceService.getTotalRevenue();
-
-        // Active Members
-        const activeMembers = await memberService.getActiveMembersCount();
-
-        // Today's Collections
-        const todayCollections = await invoiceService.getTodayCollections();
-
-        // Overdue Payments
-        const overdueInvoices = await invoiceService.getOverdueInvoices();
-
-        // Recent transactions (paid or partial)
-        const recentTransactions = await prisma.invoice.findMany({
-            where: {
-                paymentStatus: { in: ['PAID', 'PARTIAL'] },
-            },
-            include: {
-                member: true,
-                plan: true,
-            },
-            orderBy: {
-                updatedAt: 'desc',
-            },
-            take: 10,
-        });
-
-        // 1. Revenue Trend (Last 7 Days)
+        // Setup date bounds
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        const revenueInvoices = await prisma.invoice.findMany({
-            where: {
-                paymentStatus: { in: ['PAID', 'PARTIAL'] },
-                paidDate: {
-                    gte: sevenDaysAgo
-                }
-            },
-            select: {
-                paidDate: true,
-                totalAmount: true
-            }
-        });
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
 
+        // Fetch all metrics in parallel to reduce database connection roundtrip latency
+        const [
+            totalRevenue,
+            activeMembers,
+            todayCollections,
+            overdueInvoices,
+            recentTransactions,
+            revenueInvoices,
+            newMembers,
+            payingMembers
+        ] = await Promise.all([
+            invoiceService.getTotalRevenue(),
+            memberService.getActiveMembersCount(),
+            invoiceService.getTodayCollections(),
+            invoiceService.getOverdueInvoices(),
+            prisma.invoice.findMany({
+                where: {
+                    paymentStatus: { in: ['PAID', 'PARTIAL'] },
+                },
+                include: {
+                    member: true,
+                    plan: true,
+                },
+                orderBy: {
+                    updatedAt: 'desc',
+                },
+                take: 10,
+            }),
+            prisma.invoice.findMany({
+                where: {
+                    paymentStatus: { in: ['PAID', 'PARTIAL'] },
+                    paidDate: {
+                        gte: sevenDaysAgo
+                    }
+                },
+                select: {
+                    paidDate: true,
+                    totalAmount: true
+                }
+            }),
+            prisma.member.findMany({
+                where: {
+                    createdAt: {
+                        gte: sixMonthsAgo
+                    }
+                },
+                select: {
+                    createdAt: true
+                }
+            }),
+            prisma.invoice.groupBy({
+                by: ['memberId'],
+                where: {
+                    paymentStatus: 'PAID'
+                },
+                _count: {
+                    id: true
+                }
+            })
+        ]);
+
+        // Process Revenue Trend Map (Last 7 Days)
         const revenueTrendMap = {};
-        // Initialize last 7 days with 0
         for (let i = 0; i < 7; i++) {
             const d = new Date();
             d.setDate(d.getDate() - (6 - i));
@@ -62,7 +88,6 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             revenueTrendMap[dayName] = 0;
         }
 
-        // Fill with actual data
         revenueInvoices.forEach(inv => {
             if (inv.paidDate) {
                 const dayName = new Date(inv.paidDate).toLocaleDateString('en-US', { weekday: 'short' });
@@ -77,25 +102,8 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             values: Object.values(revenueTrendMap)
         };
 
-        // 2. Member Growth (Last 6 Months)
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-        sixMonthsAgo.setDate(1);
-        sixMonthsAgo.setHours(0, 0, 0, 0);
-
-        const newMembers = await prisma.member.findMany({
-            where: {
-                createdAt: {
-                    gte: sixMonthsAgo
-                }
-            },
-            select: {
-                createdAt: true
-            }
-        });
-
+        // Process Member Growth Map (Last 6 Months)
         const memberGrowthMap = {};
-        // Initialize last 6 months with 0
         for (let i = 0; i < 6; i++) {
             const d = new Date();
             d.setMonth(d.getMonth() - (5 - i));
@@ -103,7 +111,6 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             memberGrowthMap[monthName] = 0;
         }
 
-        // Fill with actual data
         newMembers.forEach(m => {
             const monthName = new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short' });
             if (memberGrowthMap[monthName] !== undefined) {
@@ -115,18 +122,6 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             labels: Object.keys(memberGrowthMap),
             values: Object.values(memberGrowthMap)
         };
-
-        // 3. Renewal Rate Calculation
-        // Logic: (Members with > 1 PAID invoice) / (Members with >= 1 PAID invoice) * 100
-        const payingMembers = await prisma.invoice.groupBy({
-            by: ['memberId'],
-            where: {
-                paymentStatus: 'PAID'
-            },
-            _count: {
-                id: true
-            }
-        });
 
         const totalPayingMembers = payingMembers.length;
         const renewedMembers = payingMembers.filter(m => m._count.id > 1).length;

@@ -86,9 +86,21 @@ class InvoiceService {
             let newStartDate = new Date();
             let newEndDate = new Date();
 
-            // Check if member is currently active and not expired
-            if (member.planEndDate && new Date(member.planEndDate) > today) {
-                // Extend existing plan
+            // Count paid invoices for this member to check if this is their first payment
+            const paidInvoicesCount = await prisma.invoice.count({
+                where: {
+                    memberId,
+                    paymentStatus: 'PAID',
+                },
+            });
+
+            // If it's the first payment and we already have registration dates, keep them
+            if (paidInvoicesCount <= 1 && member.planStartDate && member.planEndDate) {
+                newStartDate = new Date(member.planStartDate);
+                newEndDate = new Date(member.planEndDate);
+                console.log(`ℹ️ First payment for ${member.name}. Keeping initial registration dates: ${newStartDate.toISOString()} to ${newEndDate.toISOString()}`);
+            } else if (member.planEndDate && new Date(member.planEndDate) > today) {
+                // Extend existing plan (subsequent payments)
                 newStartDate = new Date(member.planStartDate); //Keep original start
                 const currentEnd = new Date(member.planEndDate);
                 currentEnd.setMonth(currentEnd.getMonth() + plan.duration);
@@ -119,12 +131,26 @@ class InvoiceService {
     }
 
     // Get all invoices with pagination and filters
-    async getAllInvoices({ page = 1, limit = 10, status = '', memberId = '' }) {
+    async getAllInvoices({ page = 1, limit = 10, status = '', memberId = '', search = '' }) {
         const skip = (page - 1) * limit;
 
         const where = {
             ...(status && { paymentStatus: status.toUpperCase() }),
             ...(memberId && { memberId }),
+            ...(search && {
+                OR: [
+                    { invoiceNumber: { contains: search, mode: 'insensitive' } },
+                    {
+                        member: {
+                            OR: [
+                                { name: { contains: search, mode: 'insensitive' } },
+                                { email: { contains: search, mode: 'insensitive' } },
+                                { phone: { contains: search, mode: 'insensitive' } },
+                            ]
+                        }
+                    }
+                ]
+            })
         };
 
         const [invoices, total] = await Promise.all([
@@ -162,6 +188,11 @@ class InvoiceService {
 
     // Update invoice
     async updateInvoice(id, data) {
+        const existingInvoice = await prisma.invoice.findUnique({ where: { id } });
+        if (!existingInvoice) return null;
+
+        const wasPaid = existingInvoice.paymentStatus === 'PAID';
+
         const {
             gstRate: inputGstRate,
             discount,
@@ -211,8 +242,8 @@ class InvoiceService {
             },
         });
 
-        // If updated to PAID, trigger renewal and send email
-        if (updatedInvoice.paymentStatus === 'PAID') {
+        // If updated to PAID (and was not already paid), trigger renewal and send email
+        if (updatedInvoice.paymentStatus === 'PAID' && !wasPaid) {
             await this.handleMembershipRenewal(updatedInvoice.memberId, updatedInvoice.planId);
 
             if (updatedInvoice.member?.email) {
@@ -240,6 +271,8 @@ class InvoiceService {
         const invoice = await prisma.invoice.findUnique({ where: { id } });
         if (!invoice) return null;
 
+        const wasPaid = invoice.paymentStatus === 'PAID';
+
         const paidInvoice = await prisma.invoice.update({
             where: { id },
             data: {
@@ -254,8 +287,10 @@ class InvoiceService {
             },
         });
 
-        // Trigger renewal
-        await this.handleMembershipRenewal(paidInvoice.memberId, paidInvoice.planId);
+        // Trigger renewal only if it was not already paid
+        if (!wasPaid) {
+            await this.handleMembershipRenewal(paidInvoice.memberId, paidInvoice.planId);
+        }
 
         // Send Payment Receipt Email
         if (paidInvoice.member?.email) {

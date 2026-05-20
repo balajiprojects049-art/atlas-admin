@@ -90,4 +90,88 @@ router.get('/test-email', async (req, res) => {
     }
 });
 
+router.get('/run-cron', async (req, res) => {
+    try {
+        const logs = [];
+        const log = (msg) => {
+            console.log(msg);
+            logs.push(msg);
+        };
+
+        log('⏰ Manually running daily membership expiry check...');
+        const today = new Date();
+        const fiveDaysLater = new Date(today);
+        fiveDaysLater.setDate(today.getDate() + 5);
+
+        // Start of today (00:00:00)
+        const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+        // End of 5 days later (23:59:59)
+        const endOfFiveDaysLater = new Date(fiveDaysLater.setHours(23, 59, 59, 999));
+
+        // 1. Automatically mark expired members as EXPIRED in the database
+        const expiredUpdate = await prisma.member.updateMany({
+            where: {
+                planEndDate: {
+                    lt: startOfToday,
+                },
+                status: 'ACTIVE',
+            },
+            data: {
+                status: 'EXPIRED',
+            },
+        });
+        log(`✅ Automatically marked ${expiredUpdate.count} expired members as EXPIRED.`);
+
+        // 2. Find members whose plan expires within the next 5 days (inclusive)
+        const expiringMembers = await prisma.member.findMany({
+            where: {
+                planEndDate: {
+                    gte: startOfToday,
+                    lte: endOfFiveDaysLater,
+                },
+                status: 'ACTIVE',
+                email: { not: '' }
+            },
+            include: {
+                plan: true
+            }
+        });
+
+        log(`🔍 Found ${expiringMembers.length} members expiring in the next 5 days.`);
+
+        const emailedMembers = [];
+        for (const member of expiringMembers) {
+            // Calculate accurate days remaining
+            const expiryDate = new Date(member.planEndDate);
+            const timeDiff = expiryDate.getTime() - new Date().getTime();
+            const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            const displayDays = Math.max(0, daysLeft);
+
+            log(`📧 Sending expiry reminder to ${member.name} (${member.email}). Expiry date: ${member.planEndDate.toISOString()} (${displayDays} days remaining)`);
+            try {
+                await emailService.sendExpiryReminder(member, displayDays);
+                emailedMembers.push({ id: member.memberId, name: member.name, email: member.email, daysLeft: displayDays });
+            } catch (err) {
+                log(`❌ Failed to send email to ${member.name}: ${err.message}`);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Cron job manual execution complete',
+            expiredCount: expiredUpdate.count,
+            emailedCount: emailedMembers.length,
+            emailedMembers,
+            logs
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Manual cron execution failed',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

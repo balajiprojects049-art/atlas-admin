@@ -14,15 +14,28 @@ const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState(null);
 
+    // Debounce search term to prevent duplicate API hits
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1); // Reset page to 1 on search change
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [search]);
+
     useEffect(() => {
         fetchInvoices();
-    }, [currentPage, search, statusFilter]);
+    }, [currentPage, debouncedSearch, statusFilter]);
 
     const fetchInvoices = async () => {
         try {
@@ -30,7 +43,7 @@ const Invoices = () => {
             const response = await invoiceAPI.getAll({
                 page: currentPage,
                 limit: 10,
-                search: search,
+                search: debouncedSearch,
                 status: statusFilter
             });
 

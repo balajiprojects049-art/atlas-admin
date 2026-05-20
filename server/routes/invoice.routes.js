@@ -44,13 +44,15 @@ router.get('/:id/download', authMiddleware, async (req, res) => {
 // Get all invoices
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const { page = 1, limit = 10, status = '', memberId = '' } = req.query;
+        console.log('GET /api/invoices query params received:', req.query);
+        const { page = 1, limit = 10, status = '', memberId = '', search = '' } = req.query;
 
         const result = await invoiceService.getAllInvoices({
             page: parseInt(page),
             limit: parseInt(limit),
             status,
             memberId,
+            search,
         });
 
         res.json({

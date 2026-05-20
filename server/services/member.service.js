@@ -111,7 +111,7 @@ class MemberService {
                 include: {
                     plan: true,
                 },
-                orderBy: { createdAt: 'desc' },
+                orderBy: { memberId: 'asc' },
                 skip,
                 take: limit,
             }),

@@ -470,7 +470,18 @@ router.get('/analytics', async (req, res) => {
         }
 
         // Total revenue (Excluding GST)
-        const orders = await prisma.cafeteriaOrder.findMany({ where });
+        const [orders, orderItems] = await Promise.all([
+            prisma.cafeteriaOrder.findMany({ where }),
+            prisma.cafeteriaOrderItem.findMany({
+                where: {
+                    order: where
+                },
+                include: {
+                    product: true
+                }
+            })
+        ]);
+
         const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount - order.gstAmount), 0);
         const totalPaid = orders.reduce((sum, order) => sum + order.paidAmount, 0);
 
@@ -478,16 +489,6 @@ router.get('/analytics', async (req, res) => {
         const totalOrders = orders.length;
         const paidOrders = orders.filter(o => o.paymentStatus === 'PAID').length;
         const pendingOrders = orders.filter(o => o.paymentStatus === 'PENDING').length;
-
-        // Top products
-        const orderItems = await prisma.cafeteriaOrderItem.findMany({
-            where: {
-                order: where
-            },
-            include: {
-                product: true
-            }
-        });
 
         const productSales = {};
         orderItems.forEach(item => {

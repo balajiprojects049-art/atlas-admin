@@ -17,6 +17,22 @@ const initCronJobs = () => {
             // End of 5 days later (23:59:59)
             const endOfFiveDaysLater = new Date(fiveDaysLater.setHours(23, 59, 59, 999));
 
+            // Automatically mark expired members as EXPIRED in the database
+            const expiredUpdate = await prisma.member.updateMany({
+                where: {
+                    planEndDate: {
+                        lt: startOfToday,
+                    },
+                    status: 'ACTIVE',
+                },
+                data: {
+                    status: 'EXPIRED',
+                },
+            });
+            if (expiredUpdate.count > 0) {
+                console.log(`✅ Automatically marked ${expiredUpdate.count} expired members as EXPIRED.`);
+            }
+
             // Find members whose plan expires within the next 5 days (inclusive)
             const expiringMembers = await prisma.member.findMany({
                 where: {
@@ -25,7 +41,7 @@ const initCronJobs = () => {
                         lte: endOfFiveDaysLater,
                     },
                     status: 'ACTIVE',
-                    email: { not: null }
+                    email: { not: '' }
                 },
                 include: {
                     plan: true

@@ -14,6 +14,7 @@ const Members = () => {
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -24,9 +25,21 @@ const Members = () => {
         memberName: ''
     });
 
+    // Debounce search term to prevent duplicate API hits
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1); // Reset page to 1 when search text changes
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [search]);
+
     useEffect(() => {
         fetchMembers();
-    }, [currentPage, search]);
+    }, [currentPage, debouncedSearch]);
 
     const fetchMembers = async () => {
         try {
@@ -34,7 +47,7 @@ const Members = () => {
             const response = await memberAPI.getAll({
                 page: currentPage,
                 limit: 10,
-                search: search
+                search: debouncedSearch
             });
 
             if (response.data.success) {
@@ -94,6 +107,10 @@ const Members = () => {
         {
             header: 'Plan',
             render: (row) => row.plan?.name || '-',
+        },
+        {
+            header: 'Joining Date',
+            render: (row) => formatDate(row.planStartDate),
         },
         {
             header: 'Expires On',

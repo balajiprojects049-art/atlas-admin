@@ -46,6 +46,7 @@ const processMemberData = (body, file) => {
 // Get all members
 router.get('/', authMiddleware, async (req, res) => {
     try {
+        console.log('GET /api/members query params received:', req.query);
         const { page = 1, limit = 10, search = '', status = '' } = req.query;
         const result = await memberService.getAllMembers({
             page: parseInt(page),

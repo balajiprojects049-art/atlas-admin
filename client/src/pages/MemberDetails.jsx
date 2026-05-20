@@ -205,7 +205,7 @@ const MemberDetails = () => {
                 {/* Right Column: Membership & Invoices */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card title="Current Membership">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div>
                                 <label className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
                                     Plan Name
@@ -216,11 +216,11 @@ const MemberDetails = () => {
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
-                                    Status
+                                    Joining Date
                                 </label>
-                                <div className="mt-1">
-                                    <MembershipStatusBadge status={status} />
-                                </div>
+                                <p className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary mt-1">
+                                    {formatDate(member.planStartDate)}
+                                </p>
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
@@ -229,6 +229,14 @@ const MemberDetails = () => {
                                 <p className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
                                     {formatDate(member.planEndDate)}
                                 </p>
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
+                                    Status
+                                </label>
+                                <div className="mt-1">
+                                    <MembershipStatusBadge status={status} />
+                                </div>
                             </div>
                         </div>
                     </Card>
